@@ -1,0 +1,73 @@
+# Runs revision mode when a maintainer submits "Request changes" on a task PR,
+# or adds the `changes-requested` label (fallback when the PR author is not a bot).
+name: Agent revise
+on:
+  pull_request_review:
+    types: [submitted]
+  pull_request:
+    types: [labeled]
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  revise:
+    if: >
+      startsWith(github.event.pull_request.head.ref, 'task/') &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      (
+        (github.event_name == 'pull_request_review' && github.event.review.state == 'changes_requested' &&
+         contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.review.author_association)) ||
+        (github.event_name == 'pull_request' && github.event.label.name == 'changes-requested')
+      )
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    concurrency:
+      group: agent-revise-${{ github.event.pull_request.number }}
+      cancel-in-progress: false
+    env:
+      GH_TOKEN: ${{ secrets.ACHLYDESA_BOT_TOKEN }}
+      HEAD_REF: ${{ github.event.pull_request.head.ref }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+          token: ${{ secrets.ACHLYDESA_BOT_TOKEN }}
+
+      - name: Identify task
+        id: task
+        run: |
+          ID="$(printf '%s' "$HEAD_REF" | sed -nE 's#^task/([A-Z0-9]+(-[A-Z0-9]+)?)-.*#\1#p')"
+          if [ -z "$ID" ] || [ ! -f "docs/tasks/$ID.md" ]; then echo "skip=1" >> "$GITHUB_OUTPUT"; exit 0; fi
+          RUNS_ON="$(python3 tools/scripts/gh_task.py runs-on "$ID")"
+          if [ "$RUNS_ON" != "either" ]; then
+            gh pr comment "$PR_NUMBER" --body "$ID is marked **Runs on: $RUNS_ON**. Revise it locally with \`/task $ID\`."
+            echo "skip=1" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          python3 tools/scripts/gh_task.py stage "$ID" changes-requested || true
+          echo "id=$ID" >> "$GITHUB_OUTPUT"
+
+      - name: Toolchains
+        if: steps.task.outputs.skip != '1'
+        run: |
+          git config user.name  "achlydesa-bot"
+          git config user.email "achlydesa-bot@users.noreply.github.com"
+          if [ -f rust-toolchain.toml ]; then rustup show active-toolchain || rustup toolchain install; fi
+
+      - name: Revise with Claude Code
+        if: steps.task.outputs.skip != '1'
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ secrets.ACHLYDESA_BOT_TOKEN }}
+          prompt: |
+            You are running in GitHub Actions, non-interactively. Changes were requested on PR #${{ github.event.pull_request.number }}.
+            Run task ${{ steps.task.outputs.id }} by following .claude/skills/task/SKILL.md exactly,
+            with $ARGUMENTS = ${{ steps.task.outputs.id }}. You will be in revision mode.
+          claude_args: |
+            --model sonnet
+            --max-turns 250
+            --allowedTools "Read,Write,Edit,MultiEdit,Glob,Grep,Agent,Task,TodoWrite,WebSearch,WebFetch,Bash(cargo:*),Bash(git:*),Bash(gh:*),Bash(python3:*),Bash(pip:*),Bash(rustup:*),Bash(ls:*),Bash(mkdir:*),Bash(cat:*),Bash(grep:*),Bash(wc:*),Bash(diff:*),Bash(sha256sum:*)"

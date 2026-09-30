@@ -1,0 +1,73 @@
+# Runs a task with Claude Code when a maintainer adds the `agent:run` label to its issue,
+# or manually via "Run workflow" with a task ID. Only users with triage/write access can add labels.
+name: Agent task
+on:
+  issues:
+    types: [labeled]
+  workflow_dispatch:
+    inputs:
+      task_id:
+        description: "Task ID, e.g. P1-02"
+        required: true
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  run:
+    if: github.event_name == 'workflow_dispatch' || github.event.label.name == 'agent:run'
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    concurrency:
+      group: agent-task-${{ github.event.issue.number || inputs.task_id }}
+      cancel-in-progress: false
+    env:
+      GH_TOKEN: ${{ secrets.ACHLYDESA_BOT_TOKEN }}   # bot PAT: repo, workflow, project scopes
+      ISSUE_TITLE: ${{ github.event.issue.title }}   # passed via env, never interpolated into scripts
+      ISSUE_NUMBER: ${{ github.event.issue.number }}
+      INPUT_TASK: ${{ inputs.task_id }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.ACHLYDESA_BOT_TOKEN }}   # pushes by a PAT trigger CI; GITHUB_TOKEN pushes would not
+
+      - name: Identify task
+        id: task
+        run: |
+          if [ -n "$INPUT_TASK" ]; then ID="$INPUT_TASK"
+          else ID="$(printf '%s' "$ISSUE_TITLE" | sed -nE 's/^([A-Z0-9]+(-[A-Z0-9]+)?) — .*/\1/p')"; fi
+          if [ -n "$ISSUE_NUMBER" ]; then gh issue edit "$ISSUE_NUMBER" --remove-label agent:run || true; fi
+          if [ -z "$ID" ] || [ ! -f "docs/tasks/$ID.md" ]; then
+            [ -n "$ISSUE_NUMBER" ] && gh issue comment "$ISSUE_NUMBER" --body "No task spec found for this issue title, so the agent did not run."
+            echo "skip=1" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          RUNS_ON="$(python3 tools/scripts/gh_task.py runs-on "$ID")"
+          if [ "$RUNS_ON" != "either" ]; then
+            [ -n "$ISSUE_NUMBER" ] && gh issue comment "$ISSUE_NUMBER" --body "$ID is marked **Runs on: $RUNS_ON**. Run it locally with \`/task $ID\`."
+            echo "skip=1" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          echo "id=$ID" >> "$GITHUB_OUTPUT"
+
+      - name: Toolchains
+        if: steps.task.outputs.skip != '1'
+        run: |
+          git config user.name  "achlydesa-bot"
+          git config user.email "achlydesa-bot@users.noreply.github.com"
+          if [ -f rust-toolchain.toml ]; then rustup show active-toolchain || rustup toolchain install; fi
+
+      - name: Run task with Claude Code
+        if: steps.task.outputs.skip != '1'
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}   # or: anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.ACHLYDESA_BOT_TOKEN }}                  # verify this input name against the action's docs
+          prompt: |
+            You are running in GitHub Actions, non-interactively.
+            Run task ${{ steps.task.outputs.id }} by following .claude/skills/task/SKILL.md exactly,
+            with $ARGUMENTS = ${{ steps.task.outputs.id }}. `gh` is authenticated as the bot via GH_TOKEN.
+          claude_args: |
+            --model sonnet
+            --max-turns 250
+            --allowedTools "Read,Write,Edit,MultiEdit,Glob,Grep,Agent,Task,TodoWrite,WebSearch,WebFetch,Bash(cargo:*),Bash(git:*),Bash(gh:*),Bash(python3:*),Bash(pip:*),Bash(rustup:*),Bash(ls:*),Bash(mkdir:*),Bash(cat:*),Bash(grep:*),Bash(wc:*),Bash(diff:*),Bash(sha256sum:*)"

@@ -1,0 +1,7 @@
+/target
+/data/raw/
+/data/generated/
+/runs/
+*.pyc
+__pycache__/
+.DS_Store

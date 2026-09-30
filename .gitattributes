@@ -1,0 +1,12 @@
+# Keep LF everywhere, on every OS. Content files are hashed into save-game fingerprints
+# and compared in snapshot tests, so line endings must be identical on Windows, macOS, and CI.
+* text=auto eol=lf
+
+# Binary data: never convert.
+*.png  binary
+*.jpg  binary
+*.bin  binary
+*.hgt  binary
+*.tif  binary
+*.tiff binary
+*.zip  binary

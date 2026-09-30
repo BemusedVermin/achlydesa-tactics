@@ -1,0 +1,26 @@
+name: CI
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Task specs parse
+        run: python3 tools/scripts/gh_task.py specs > /dev/null
+
+      # Everything below activates once P1-01 creates the workspace.
+      - name: Rust toolchain (pinned by rust-toolchain.toml)
+        if: hashFiles('Cargo.toml') != ''
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+
+      - name: cargo xtask ci
+        if: hashFiles('Cargo.toml') != ''
+        run: cargo xtask ci
