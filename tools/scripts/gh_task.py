@@ -8,6 +8,8 @@ Commands:
   specs [--check]                    Print parsed specs (offline); --check validates sections, deps, and cycles.
   bootstrap --owner O --reviewer R   Create labels, the Project, its fields, one issue per spec; sync bodies and fields.
             [--title T] [--dry-run]  Idempotent: re-run after editing spec headers.
+  graph [--phase P1] [--offline] [--output F | --issue]
+                                     Dependency graph (Mermaid), colored by board status.
   check                              Verify config, labels, Status options, and that every spec has an issue.
   issue ID                           Print the task's issue number and URL.
   runs-on ID                         Print the spec's "Runs on" value (either | local | human).
@@ -153,7 +155,13 @@ def gh(*args: str, mutate: bool = False, parse_json: bool = False, input_text: s
     # gh always speaks UTF-8. Decode explicitly: Windows defaults to cp1252, which turns "—" into "â€”".
     res = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace", input=input_text)
     if res.returncode != 0:
-        raise SystemExit(f"gh failed: {shlex.join(cmd)}\n{res.stderr.strip()}")
+        hint = ""
+        if "unknown owner type" in res.stderr:
+            hint = ("\nhint: `gh project` reports a token problem this way. The token needs scopes "
+                    "project, read:org, and read:discussion (and must not be expired). Locally: "
+                    "gh auth refresh -s project,read:org,read:discussion. For ACHLYDESA_BOT_TOKEN: edit the "
+                    "token at https://github.com/settings/tokens and add those scopes.")
+        raise SystemExit(f"gh failed: {shlex.join(cmd)}\n{res.stderr.strip()}{hint}")
     out = res.stdout.strip()
     return (json.loads(out) if out else {}) if parse_json else out
 
@@ -216,6 +224,14 @@ def project_items(cfg: dict) -> dict[int, str]:
     data = gh("project", "item-list", str(cfg["number"]), "--owner", cfg["owner"], "--format", "json",
               "--limit", "1000", parse_json=True)
     return {it["content"]["number"]: it["id"] for it in data.get("items", [])
+            if it.get("content", {}).get("number") is not None}
+
+
+def project_statuses(cfg: dict) -> dict[int, str]:
+    """Issue number -> board Status (gh exposes single-select values under the lowercased field name)."""
+    data = gh("project", "item-list", str(cfg["number"]), "--owner", cfg["owner"], "--format", "json",
+              "--limit", "1000", parse_json=True)
+    return {it["content"]["number"]: it.get("status") or "" for it in data.get("items", [])
             if it.get("content", {}).get("number") is not None}
 
 
@@ -301,6 +317,36 @@ def issue_body(s: Spec, repo: str, numbers: dict[str, int], branch: str) -> str:
             f"Comments from maintainers on this issue are treated as additional requirements.</sub>\n")
 
 
+def sync_dependencies(specs: dict[str, "Spec"], numbers: dict[str, int], repo: str) -> None:
+    """Mirror spec dependencies into GitHub's native issue relationships (Relationships > Blocked by).
+    Adds missing links and removes links to task issues the spec no longer lists. Non-task links are kept."""
+    task_numbers = set(numbers.values())
+    db_ids: dict[int, int] = {}
+
+    def db_id(n: int) -> int:
+        if n not in db_ids:
+            db_ids[n] = int(gh("api", f"repos/{repo}/issues/{n}", "-q", ".id") or 0)
+        return db_ids[n]
+
+    for s in specs.values():
+        n = numbers.get(s.id)
+        if not n or n < 0:
+            continue
+        want = {numbers[d] for d in s.depends if numbers.get(d, -1) > 0}
+        if DRY_RUN:
+            for w in sorted(want):
+                print(f"DRY-RUN: #{n} blocked by #{w}", file=sys.stderr)
+            continue
+        current = json.loads(gh("api", f"repos/{repo}/issues/{n}/dependencies/blocked_by", "--paginate") or "[]")
+        have = {c["number"]: c["id"] for c in current}
+        for w in sorted(want - set(have)):
+            gh("api", "-X", "POST", f"repos/{repo}/issues/{n}/dependencies/blocked_by",
+               "-F", f"issue_id={db_id(w)}", mutate=True)
+        for extra in sorted(set(have) - want):
+            if extra in task_numbers:
+                gh("api", "-X", "DELETE", f"repos/{repo}/issues/{n}/dependencies/blocked_by/{have[extra]}", mutate=True)
+
+
 def cmd_bootstrap(args) -> None:
     global DRY_RUN
     DRY_RUN = args.dry_run
@@ -373,9 +419,97 @@ def cmd_bootstrap(args) -> None:
         set_field(cfg, fields, item_id, "Agent", s.agent)
         set_field(cfg, fields, item_id, "Size", s.size)
         set_field(cfg, fields, item_id, "Runs on", s.runs_on)
+    # Pass 3: native "Blocked by" relationships, so issues and the board show what is blocked.
+    sync_dependencies(specs, numbers, repo)
     print("Bootstrap complete." if not DRY_RUN else "Dry run complete; nothing was changed.")
     print("Next: set the Status options and built-in workflows in the Project settings (see docs/tasks/H-1.md), "
           "then run: gh_task.py check")
+
+
+GRAPH_ISSUE_TITLE = "Task graph"
+GRAPH_STYLES = {
+    "done": "fill:#d7ead3,stroke:#4f7a47,color:#2b3a28",
+    "review": "fill:#d6e4f0,stroke:#3d6a8f,color:#1f3447",
+    "changes": "fill:#f3d9d4,stroke:#9a4a3b,color:#4a221b",
+    "progress": "fill:#f6e7c1,stroke:#9a7a2b,color:#4a3a12",
+    "ready": "fill:#ffffff,stroke:#236965,stroke-width:3px,color:#1d2b2a",
+    "blocked": "fill:#ece8e1,stroke:#a39b8e,color:#6b645a",
+}
+
+
+def node_state(s: "Spec", closed: set[str], status: str) -> str:
+    if s.id in closed:
+        return "done"
+    st = status.lower()
+    if st == "awaiting review":
+        return "review"
+    if st == "changes requested":
+        return "changes"
+    if st == "in progress":
+        return "progress"
+    return "ready" if all(d in closed for d in s.depends) else "blocked"
+
+
+def render_graph(specs: dict[str, "Spec"], include: set[str], closed: set[str], statuses: dict[str, str]) -> str:
+    def node_id(t: str) -> str:
+        return "n_" + re.sub(r"[^A-Za-z0-9]", "_", t)
+
+    def label(s: "Spec") -> str:
+        title = s.title if len(s.title) <= 34 else s.title[:33] + "…"
+        title = title.replace('"', "'")
+        return f"{s.id}<br/>{title}"
+
+    lines = ["```mermaid", "flowchart LR"]
+    for t in include:
+        s = specs[t]
+        lbl = label(s)
+        shape = f'{{{{"{lbl}"}}}}' if s.runs_on == "human" else f'["{lbl}"]'   # hexagon for human steps
+        lines.append(f"  {node_id(t)}{shape}:::{node_state(s, closed, statuses.get(t, ''))}")
+    for t in include:
+        for d in specs[t].depends:
+            if d in include:
+                lines.append(f"  {node_id(d)} --> {node_id(t)}")
+    for cls, style in GRAPH_STYLES.items():
+        lines.append(f"  classDef {cls} {style}")
+    lines.append("```")
+    return "\n".join(lines)
+
+
+def cmd_graph(args) -> None:
+    specs = load_specs()
+    phases = set(args.phase or [])
+    include = {t for t, s in specs.items() if not phases or s.phase in phases}
+    if phases:   # show direct dependencies from outside the selection, for context
+        include |= {d for t in list(include) for d in specs[t].depends}
+    ordered = [t for t in specs if t in include]
+    closed: set[str] = set()
+    statuses: dict[str, str] = {}
+    if not args.offline:
+        cfg = load_config()
+        issues = task_issues(cfg["repo"], warn=False)
+        closed = {t for t, it in issues.items() if it["state"] == "CLOSED"}
+        by_number = project_statuses(cfg)
+        statuses = {t: by_number.get(it["number"], "") for t, it in issues.items()}
+    graph = render_graph(specs, ordered, closed, statuses)
+    legend = ("**Legend:** green = done · blue = awaiting review · red = changes requested · amber = in progress · "
+              "**teal border = ready to start** · grey = blocked. Hexagons are your steps.")
+    doc = f"{legend}\n\n{graph}\n\n<sub>Generated by `tools/scripts/gh_task.py graph`. Do not edit by hand.</sub>\n"
+    if args.output:
+        Path(args.output).write_text(doc, encoding="utf-8")
+        print(f"Wrote {args.output}")
+    elif args.issue:
+        cfg = load_config()
+        found = gh("issue", "list", "--repo", cfg["repo"], "--state", "open", "--search",
+                   f'"{GRAPH_ISSUE_TITLE}" in:title', "--json", "number,title", parse_json=True) or []
+        match = next((i for i in found if i["title"] == GRAPH_ISSUE_TITLE), None)
+        if match:
+            gh("issue", "edit", str(match["number"]), "--repo", cfg["repo"], "--body", doc, mutate=True)
+            print(f"Updated #{match['number']}")
+        else:
+            url = gh("issue", "create", "--repo", cfg["repo"], "--title", GRAPH_ISSUE_TITLE, "--body", doc, mutate=True)
+            print(f"Created {url}. Pin it from the issue page so it stays at the top of Issues.")
+    else:
+        print(doc)
 
 
 def cmd_check(_args) -> None:
@@ -540,6 +674,12 @@ def main() -> None:
     b.add_argument("--dry-run", action="store_true")
     b.set_defaults(fn=cmd_bootstrap)
     sub.add_parser("check").set_defaults(fn=cmd_check)
+    g = sub.add_parser("graph")
+    g.add_argument("--phase", action="append", help="limit to a phase, e.g. --phase P1 (repeatable)")
+    g.add_argument("--offline", action="store_true", help="dependencies only; no GitHub state")
+    g.add_argument("--output", help="write Markdown with a Mermaid graph to this file")
+    g.add_argument("--issue", action="store_true", help="write the graph to the pinned 'Task graph' issue")
+    g.set_defaults(fn=cmd_graph)
     for name, fn in (("issue", cmd_issue), ("runs-on", cmd_runs_on), ("ready", cmd_ready), ("handoff", cmd_handoff),
                      ("review", cmd_review), ("comments", cmd_comments)):
         c = sub.add_parser(name)
