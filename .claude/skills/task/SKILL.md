@@ -5,7 +5,7 @@ argument-hint: <task-id>
 disable-model-invocation: true
 ---
 
-Run task **$ARGUMENTS**. This works identically in a local Claude Code session and in GitHub Actions. `gh` is authenticated (ideally as the bot). Use `python3 tools/scripts/gh_task.py` (below: `T`) for all board and issue lookups.
+Run task **$ARGUMENTS**. This works identically in a local Claude Code session and in GitHub Actions. `gh` is authenticated (ideally as the bot). Use `python3 tools/scripts/gh_task.py` (below: `T`) for all board and issue lookups. **If any `T` command fails, stop and report its full error output. Never continue past a failed board or readiness command.** **In GitHub Actions** (`GITHUB_ACTIONS=true`) the workflow does the board bookkeeping itself: it checks readiness and sets In Progress before you start, and sets Awaiting review after you finish. There, skip the `T stage` calls in steps 4 and 10.
 
 1. **Load.** Read `docs/tasks/$ARGUMENTS.md`. If its *Runs on* is `human`, stop: human steps are not run by agents. If it is `local` and the environment variable `GITHUB_ACTIONS` is `true`, comment on the task issue that it must run locally, and stop.
 
@@ -19,7 +19,7 @@ Run task **$ARGUMENTS**. This works identically in a local Claude Code session a
 4. **Branch.**
    - Fresh: `git fetch origin && git checkout -B task/$ARGUMENTS-<slug> origin/master`, with the slug from the spec's *Branch slug*.
    - Revision: `git fetch origin && git checkout <branch from step 3> && git pull --ff-only`.
-   - Then `T stage $ARGUMENTS in-progress`.
+   - Locally, run `T stage $ARGUMENTS in-progress` **before** delegating, so the board shows the work as soon as it starts.
 
 5. **Delegate.** Launch the subagent named in the spec's *Agent* field with: "Execute task $ARGUMENTS. Spec: docs/tasks/$ARGUMENTS.md." Add "Additional requirements: .git/achlydesa-comments-$ARGUMENTS.md" in fresh mode if that file has content. Add "Revision mode. Review feedback: .git/achlydesa-review-$ARGUMENTS.md. Address every item or explain why not." in revision mode.
 
@@ -40,4 +40,4 @@ Run task **$ARGUMENTS**. This works identically in a local Claude Code session a
      - Remove the `changes-requested` label if present: `gh pr edit <n> --remove-label changes-requested`.
      - Re-request review with `gh pr edit <n> --add-reviewer <reviewer>`.
 
-10. **Hand off.** Run `T stage $ARGUMENTS awaiting-review`. Print a five-line summary: what was built, acceptance result, audit verdict, deviations, open questions, and the PR URL. Stop. Never merge, approve, or close issues.
+10. **Hand off.** Locally, run `T handoff $ARGUMENTS`. It fails if no open PR exists, which means step 9 did not succeed; fix that first. In Actions, skip it; the workflow does it. Print a five-line summary: what was built, acceptance result, audit verdict, deviations, open questions, and the PR URL. Stop. Never merge, approve, or close issues.

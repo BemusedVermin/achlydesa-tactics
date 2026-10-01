@@ -14,6 +14,7 @@ Commands:
   ready ID                           Exit 0 if every dependency's issue is closed, else list the blockers and exit 1.
   stage ID STAGE                     Set the board Status: todo | in-progress | awaiting-review | changes-requested | done.
   pr ID [--json]                     Show the open task PR (task/ID-*), its review decision, and whether a revision is requested.
+  handoff ID                         Require an open task PR, set Awaiting review, print the PR URL.
   review ID                          Print review feedback on the open task PR since the agent's last "## Revision" comment.
   comments ID                        Print human comments on the task issue (extra requirements, e.g. after G1).
 """
@@ -470,6 +471,22 @@ def cmd_pr(args) -> None:
               f"review={result['review_decision'] or 'none'} revision_requested={result['revision_requested']}")
 
 
+def cmd_handoff(args) -> None:
+    """Final bookkeeping after an agent run: the task must have an open PR; set Awaiting review."""
+    spec_or_die(args.id)
+    cfg = load_config()
+    pr = open_task_pr(args.id, cfg["repo"])
+    if pr is None:
+        print(f"{args.id}: no open PR from a task/{args.id}-* branch, so it was not handed off for review.")
+        sys.exit(1)
+    n = issue_for(args.id, cfg["repo"])["number"]
+    item = project_items(cfg).get(n)
+    if item is None:
+        raise SystemExit(f"Issue #{n} is not on the board. Re-run bootstrap.")
+    set_field(cfg, project_fields(cfg), item, "Status", STAGES["awaiting-review"])
+    print(pr["url"])
+
+
 def cmd_review(args) -> None:
     cfg = load_config()
     pr = open_task_pr(args.id, cfg["repo"])
@@ -523,7 +540,7 @@ def main() -> None:
     b.add_argument("--dry-run", action="store_true")
     b.set_defaults(fn=cmd_bootstrap)
     sub.add_parser("check").set_defaults(fn=cmd_check)
-    for name, fn in (("issue", cmd_issue), ("runs-on", cmd_runs_on), ("ready", cmd_ready),
+    for name, fn in (("issue", cmd_issue), ("runs-on", cmd_runs_on), ("ready", cmd_ready), ("handoff", cmd_handoff),
                      ("review", cmd_review), ("comments", cmd_comments)):
         c = sub.add_parser(name)
         c.add_argument("id")

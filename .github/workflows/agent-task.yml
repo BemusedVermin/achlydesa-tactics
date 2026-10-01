@@ -51,6 +51,8 @@ jobs:
         run: |
           if [ -n "$INPUT_TASK" ]; then ID="$INPUT_TASK"
           else ID="$(printf '%s' "$ISSUE_TITLE" | sed -nE 's/^([A-Z0-9]+(-[A-Z0-9]+)?) — .*/\1/p')"; fi
+          # agent:run is a trigger, not a state: remove it so adding it again starts a new run.
+          # Progress shows on the board (Status) and as a comment linking the run log.
           if [ -n "$ISSUE_NUMBER" ]; then gh issue edit "$ISSUE_NUMBER" --remove-label agent:run || true; fi
           if [ -z "$ID" ] || [ ! -f "docs/tasks/$ID.md" ]; then
             [ -n "$ISSUE_NUMBER" ] && gh issue comment "$ISSUE_NUMBER" --body "No task spec found for this issue title, so the agent did not run."
@@ -63,15 +65,31 @@ jobs:
           fi
           echo "id=$ID" >> "$GITHUB_OUTPUT"
 
-      - name: Toolchains
+      - name: Check readiness and mark In Progress
         if: steps.task.outputs.skip != '1'
+        env:
+          ID: ${{ steps.task.outputs.id }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          test -f .github/project.json || { echo "::error::.github/project.json is not committed on the default branch. Run gh_task.py bootstrap locally and commit it."; exit 1; }
+          if ! OUT="$(python3 tools/scripts/gh_task.py ready "$ID" 2>&1)"; then
+            echo "$OUT"
+            [ -n "$ISSUE_NUMBER" ] && gh issue comment "$ISSUE_NUMBER" --body "Agent did not start: $OUT"
+            echo "skip=1" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          python3 tools/scripts/gh_task.py stage "$ID" in-progress
+          if [ -n "$ISSUE_NUMBER" ]; then gh issue comment "$ISSUE_NUMBER" --body "Agent started on $ID. Run log: $RUN_URL"; fi
+        id: ready
+
+      - name: Toolchains
+        if: steps.task.outputs.skip != '1' && steps.ready.outputs.skip != '1'
         run: |
           git config user.name  "achlydesa-bot"
           git config user.email "achlydesa-bot@users.noreply.github.com"
           if [ -f rust-toolchain.toml ]; then rustup show active-toolchain || rustup toolchain install; fi
 
       - name: Run task with Claude Code
-        if: steps.task.outputs.skip != '1'
+        if: steps.task.outputs.skip != '1' && steps.ready.outputs.skip != '1'
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}   # or: anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -84,3 +102,18 @@ jobs:
             --model sonnet
             --max-turns 250
             --allowedTools "Read,Write,Edit,MultiEdit,Glob,Grep,Agent,Task,TodoWrite,WebSearch,WebFetch,Bash(cargo:*),Bash(git:*),Bash(gh:*),Bash(python3:*),Bash(pip:*),Bash(rustup:*),Bash(ls:*),Bash(mkdir:*),Bash(cat:*),Bash(grep:*),Bash(wc:*),Bash(diff:*),Bash(sha256sum:*)"
+
+      - name: Hand off for review
+        if: steps.task.outputs.skip != '1' && steps.ready.outputs.skip != '1'
+        env:
+          ID: ${{ steps.task.outputs.id }}
+        run: |
+          PR_URL="$(python3 tools/scripts/gh_task.py handoff "$ID")"
+          if [ -n "$ISSUE_NUMBER" ]; then gh issue comment "$ISSUE_NUMBER" --body "Ready for review: $PR_URL"; fi
+
+      - name: Report failure on the issue
+        if: failure() && env.ISSUE_NUMBER != ''
+        env:
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          gh issue comment "$ISSUE_NUMBER" --body "Agent run failed. Log: $RUN_URL"
