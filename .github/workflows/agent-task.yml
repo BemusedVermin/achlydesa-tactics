@@ -1,5 +1,10 @@
 # Runs a task with Claude Code when a maintainer adds the `agent:run` label to its issue,
 # or manually via "Run workflow" with a task ID. Only users with triage/write access can add labels.
+#
+# Identity: Claude acts through the Claude GitHub App (OIDC; needs id-token: write), so its PRs and
+# comments appear as claude[bot] and you can approve them. ACHLYDESA_BOT_TOKEN (a classic PAT with
+# repo + project scopes; your own account is fine) is used only by the shell steps for the Project
+# board and issue comments, which the App token cannot do, and as git push credentials.
 name: Agent task
 on:
   issues:
@@ -23,13 +28,13 @@ jobs:
       group: agent-task-${{ github.event.issue.number || inputs.task_id }}
       cancel-in-progress: false
     env:
-      GH_TOKEN: ${{ secrets.ACHLYDESA_BOT_TOKEN }}   # bot PAT: repo, workflow, project scopes
       ISSUE_TITLE: ${{ github.event.issue.title }}   # passed via env, never interpolated into scripts
       ISSUE_NUMBER: ${{ github.event.issue.number }}
       INPUT_TASK: ${{ inputs.task_id }}
     steps:
       - name: Check secrets
         env:
+          GH_TOKEN: ${{ secrets.ACHLYDESA_BOT_TOKEN }}   # board/issue bookkeeping only
           CLAUDE_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
         run: |
           if [ -z "$GH_TOKEN" ]; then
@@ -44,10 +49,12 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.ACHLYDESA_BOT_TOKEN }}   # pushes by a PAT trigger CI; GITHUB_TOKEN pushes would not
+          token: ${{ secrets.ACHLYDESA_BOT_TOKEN }}   # git push credentials; pushes by a PAT trigger CI (GITHUB_TOKEN pushes would not)
 
       - name: Identify task
         id: task
+        env:
+          GH_TOKEN: ${{ secrets.ACHLYDESA_BOT_TOKEN }}   # board/issue bookkeeping only
         run: |
           if [ -n "$INPUT_TASK" ]; then ID="$INPUT_TASK"
           else ID="$(printf '%s' "$ISSUE_TITLE" | sed -nE 's/^([A-Z0-9]+(-[A-Z0-9]+)?) — .*/\1/p')"; fi
@@ -68,6 +75,7 @@ jobs:
       - name: Check readiness and mark In Progress
         if: steps.task.outputs.skip != '1'
         env:
+          GH_TOKEN: ${{ secrets.ACHLYDESA_BOT_TOKEN }}   # board/issue bookkeeping only
           ID: ${{ steps.task.outputs.id }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
@@ -84,8 +92,8 @@ jobs:
       - name: Toolchains
         if: steps.task.outputs.skip != '1' && steps.ready.outputs.skip != '1'
         run: |
-          git config user.name  "achlydesa-bot"
-          git config user.email "achlydesa-bot@users.noreply.github.com"
+          git config user.name  "claude[bot]"
+          git config user.email "claude[bot]@users.noreply.github.com"
           if [ -f rust-toolchain.toml ]; then rustup show active-toolchain || rustup toolchain install; fi
 
       - name: Run task with Claude Code
@@ -93,11 +101,10 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}   # or: anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          github_token: ${{ secrets.ACHLYDESA_BOT_TOKEN }}                  # verify this input name against the action's docs
           prompt: |
             You are running in GitHub Actions, non-interactively.
             Run task ${{ steps.task.outputs.id }} by following .claude/skills/task/SKILL.md exactly,
-            with $ARGUMENTS = ${{ steps.task.outputs.id }}. `gh` is authenticated as the bot via GH_TOKEN.
+            with $ARGUMENTS = ${{ steps.task.outputs.id }}. `gh` is authenticated as the Claude GitHub App. The workflow does all board bookkeeping; do not run `gh_task.py stage` or `handoff`.
           claude_args: |
             --model sonnet
             --max-turns 250
@@ -106,6 +113,7 @@ jobs:
       - name: Hand off for review
         if: steps.task.outputs.skip != '1' && steps.ready.outputs.skip != '1'
         env:
+          GH_TOKEN: ${{ secrets.ACHLYDESA_BOT_TOKEN }}   # board/issue bookkeeping only
           ID: ${{ steps.task.outputs.id }}
         run: |
           PR_URL="$(python3 tools/scripts/gh_task.py handoff "$ID")"
@@ -114,6 +122,7 @@ jobs:
       - name: Report failure on the issue
         if: failure() && env.ISSUE_NUMBER != ''
         env:
+          GH_TOKEN: ${{ secrets.ACHLYDESA_BOT_TOKEN }}   # board/issue bookkeeping only
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           gh issue comment "$ISSUE_NUMBER" --body "Agent run failed. Log: $RUN_URL"
