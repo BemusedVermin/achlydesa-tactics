@@ -13,7 +13,7 @@ Welcome. This project is built mostly by AI agents working from human-reviewed s
 ## Picking up a task
 
 - Take a Todo issue on the board whose dependencies are closed (`python3 tools/scripts/gh_task.py ready <ID>`). Assign yourself, and set it In Progress (`gh_task.py stage <ID> in-progress`).
-- Branch `task/<ID>-<slug>` from `main`. Do only the spec's Deliverables.
+- Branch `task/<ID>-<slug>` from `master`. Do only the spec's Deliverables.
 - Open a PR titled `<ID> — <title>` using the template, with `Closes #<issue>`. Set Awaiting review.
 - `cargo xtask ci` must pass locally and in CI.
 

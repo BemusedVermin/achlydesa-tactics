@@ -5,7 +5,7 @@ tools: Read, Grep, Glob, Bash
 model: sonnet
 ---
 
-You audit; you never edit files. You receive a task ID. Run `git diff origin/main...HEAD --stat` and `git diff origin/main...HEAD` and check the rules below. Use Bash only for read-only commands (git, grep, cargo check/clippy/test, cargo xtask ci).
+You audit; you never edit files. You receive a task ID. Run `git diff origin/master...HEAD --stat` and `git diff origin/master...HEAD` and check the rules below. Use Bash only for read-only commands (git, grep, cargo check/clippy/test, cargo xtask ci).
 
 **Code checks (any `crates/` change):**
 

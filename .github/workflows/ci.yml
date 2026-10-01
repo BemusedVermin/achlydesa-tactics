@@ -2,7 +2,7 @@ name: CI
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: [master]
 
 permissions:
   contents: read
@@ -13,8 +13,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Task specs parse
-        run: python3 tools/scripts/gh_task.py specs > /dev/null
+      - name: Task specs are valid
+        run: python3 tools/scripts/gh_task.py specs --check
 
       # Everything below activates once P1-01 creates the workspace.
       - name: Rust toolchain (pinned by rust-toolchain.toml)

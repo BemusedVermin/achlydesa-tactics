@@ -31,6 +31,19 @@ jobs:
       HEAD_REF: ${{ github.event.pull_request.head.ref }}
       PR_NUMBER: ${{ github.event.pull_request.number }}
     steps:
+      - name: Check secrets
+        env:
+          CLAUDE_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::error::Repository secret ACHLYDESA_BOT_TOKEN is missing or empty. Add it under the repo's Actions secrets (see docs/tasks/H-1.md step 2), e.g. gh secret set ACHLYDESA_BOT_TOKEN < token-file"
+            exit 1
+          fi
+          if [ -z "$CLAUDE_TOKEN" ]; then
+            echo "::error::Repository secret CLAUDE_CODE_OAUTH_TOKEN is missing or empty (see docs/tasks/H-1.md step 3). If you use an API key instead, edit this check and the claude-code-action inputs."
+            exit 1
+          fi
+
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.ref }}
