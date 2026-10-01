@@ -60,7 +60,8 @@ jobs:
             gh pr comment "$PR_NUMBER" --body "$ID is marked **Runs on: $RUNS_ON**. Revise it locally with \`/task $ID\`."
             echo "skip=1" >> "$GITHUB_OUTPUT"; exit 0
           fi
-          python3 tools/scripts/gh_task.py stage "$ID" changes-requested || true
+          test -f .github/project.json || { echo "::error::.github/project.json is not committed on the default branch."; exit 1; }
+          python3 tools/scripts/gh_task.py stage "$ID" changes-requested
           echo "id=$ID" >> "$GITHUB_OUTPUT"
 
       - name: Toolchains
@@ -84,3 +85,17 @@ jobs:
             --model sonnet
             --max-turns 250
             --allowedTools "Read,Write,Edit,MultiEdit,Glob,Grep,Agent,Task,TodoWrite,WebSearch,WebFetch,Bash(cargo:*),Bash(git:*),Bash(gh:*),Bash(python3:*),Bash(pip:*),Bash(rustup:*),Bash(ls:*),Bash(mkdir:*),Bash(cat:*),Bash(grep:*),Bash(wc:*),Bash(diff:*),Bash(sha256sum:*)"
+
+      - name: Hand off for review
+        if: steps.task.outputs.skip != '1'
+        env:
+          ID: ${{ steps.task.outputs.id }}
+        run: |
+          python3 tools/scripts/gh_task.py handoff "$ID"
+
+      - name: Report failure on the PR
+        if: failure()
+        env:
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          gh pr comment "$PR_NUMBER" --body "Agent revision failed. Log: $RUN_URL"
