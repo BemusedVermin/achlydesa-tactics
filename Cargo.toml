@@ -1,0 +1,18 @@
+[workspace]
+resolver = "3"
+# `spikes/*` is added by P1-S1: Cargo rejects the glob while `spikes/` is empty.
+members = ["crates/*", "xtask"]
+
+[workspace.package]
+edition = "2024"
+version = "0.1.0"
+publish = false
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+missing_docs = "warn"
+
+[workspace.lints.clippy]
+unwrap_used = "warn"
+dbg_macro = "warn"
+todo = "warn"

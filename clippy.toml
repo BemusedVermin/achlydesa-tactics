@@ -1,0 +1,6 @@
+disallowed-types = [
+  { path = "std::collections::HashMap", reason = "nondeterministic iteration; use BTreeMap" },
+  { path = "std::collections::HashSet", reason = "nondeterministic iteration; use BTreeSet" },
+  { path = "std::time::Instant", reason = "wall clock forbidden in simulation" },
+  { path = "std::time::SystemTime", reason = "wall clock forbidden in simulation" },
+]

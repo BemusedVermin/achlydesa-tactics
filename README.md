@@ -56,3 +56,11 @@ Every phase from 2 onward starts with a planning task, `P<N>-00`, already on the
 ## Collaborators
 
 Read `CONTRIBUTING.md`. Humans pick up tasks the same way agents do: branch `task/<ID>-<slug>`, fill the PR template, pass CI. The determinism and boundary rules in `CLAUDE.md` bind everyone.
+
+## Building
+
+The workspace pins its compiler in `rust-toolchain.toml` (a pinned compiler is part of the determinism contract); `rustup` installs it on first use.
+
+- `cargo xtask ci` runs the full gate: format check, clippy with `-D warnings`, tests, the dependency guard, and the text lint when `content/text/` exists.
+- `cargo xtask check-deps` checks every crate dependency against `xtask/allowed_deps.toml`, which defines the allowed crate graph.
+- `cargo test -p <crate>` tests a single crate.
