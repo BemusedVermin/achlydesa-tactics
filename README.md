@@ -6,6 +6,7 @@ A continuous-theater WEGO strategy RPG about the people the archons discarded. R
 
 | Thing | Where it lives |
 |---|---|
+| The whole plan | `docs/ROADMAP.md`: Phases 0–13, their gates, and how each phase's tasks get written |
 | What to build | Specs in `docs/tasks/<ID>.md` (source of truth: goal, deliverables, interfaces, acceptance) |
 | What's happening | GitHub Project board: one issue per spec, Status Todo → In Progress → Awaiting review → (Changes requested) → Done |
 | Review | Pull requests: agent-authored, CI-checked, code-owner review required |
@@ -25,7 +26,7 @@ Follow `docs/tasks/H-1.md`. It covers the repository, a bot account, the Claude 
 
 Either way, the agent:
 1. checks that the task's dependencies are closed;
-2. branches from `main` and sets the task In Progress;
+2. branches from `master` and sets the task In Progress;
 3. delegates to the spec's subagent;
 4. runs the acceptance checks and `cargo xtask ci`;
 5. has the invariant auditor review the diff;
@@ -47,6 +48,10 @@ H-1 → P1-01 → P0-01 → H-2 → P0-04 → P0-05 → H-3 → P1-02 → P1-03 
 ```
 
 On GitHub you can run independent tasks at the same time: P1-08, P1-09, P1-10, and P1-13 can all go once P1-02 merges. Each run takes Actions minutes and model usage, so parallelism is a spending choice.
+
+## Later phases
+
+Every phase from 2 onward starts with a planning task, `P<N>-00`, already on the board. It is run by the `spec-writer` agent like any other task and opens a PR containing that phase's specs. Review it hard. Merge it, re-run `gh_task.py bootstrap` to create the new issues, then execute. Each phase ends at a feeling gate, `G<N>`, which unblocks the next planning task. Details are in `docs/ROADMAP.md`.
 
 ## Collaborators
 

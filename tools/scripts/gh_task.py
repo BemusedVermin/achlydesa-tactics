@@ -5,7 +5,7 @@ Standard library only; every GitHub call goes through the `gh` CLI, which must b
 Project writes need a token with the `project` scope (in Actions: GH_TOKEN = ACHLYDESA_BOT_TOKEN).
 
 Commands:
-  specs                              Print parsed specs as a table (offline).
+  specs [--check]                    Print parsed specs (offline); --check validates sections, deps, and cycles.
   bootstrap --owner O --reviewer R   Create labels, the Project, its fields, one issue per spec; sync bodies and fields.
             [--title T] [--dry-run]  Idempotent: re-run after editing spec headers.
   check                              Verify config, labels, Status options, and that every spec has an issue.
@@ -53,8 +53,8 @@ LABELS = {
 }
 FIELDS = {  # name -> options (None = TEXT)
     "Task ID": None,
-    "Phase": ["P0", "P1", "Gate"],
-    "Agent": ["canon-editor", "task-implementer", "Liam"],
+    "Phase": [f"P{n}" for n in range(14)] + ["Gate"],
+    "Agent": ["canon-editor", "task-implementer", "spec-writer", "Liam"],
     "Size": ["S", "M", "L", "XL"],
     "Runs on": ["either", "local", "human"],
 }
@@ -77,7 +77,8 @@ class Spec:
 
     @property
     def phase(self) -> str:
-        return self.id[:2] if self.id.startswith("P") else "Gate"
+        prefix = self.id.split("-")[0]
+        return prefix if re.fullmatch(r"P\d+", prefix) else "Gate"
 
     @property
     def issue_title(self) -> str:
@@ -148,7 +149,8 @@ def gh(*args: str, mutate: bool = False, parse_json: bool = False, input_text: s
     if mutate and DRY_RUN:
         print("DRY-RUN:", shlex.join(cmd), file=sys.stderr)
         return {} if parse_json else ""
-    res = subprocess.run(cmd, capture_output=True, text=True, input=input_text)
+    # gh always speaks UTF-8. Decode explicitly: Windows defaults to cp1252, which turns "—" into "â€”".
+    res = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace", input=input_text)
     if res.returncode != 0:
         raise SystemExit(f"gh failed: {shlex.join(cmd)}\n{res.stderr.strip()}")
     out = res.stdout.strip()
@@ -165,14 +167,34 @@ def repo_name() -> str:
     return gh("repo", "view", "--json", "nameWithOwner", "-q", ".nameWithOwner")
 
 
-def task_issues(repo: str) -> dict[str, dict]:
+def default_branch() -> str:
+    """The repository's default branch (e.g. master), so links and bases never assume a name."""
+    return gh("repo", "view", "--json", "defaultBranchRef", "-q", ".defaultBranchRef.name") or "master"
+
+
+TASK_TITLE_RE = re.compile(r"^([A-Z0-9]+(?:-[A-Z0-9]+)?)\s+[—–-]\s")
+
+
+def task_issues(repo: str, warn: bool = True) -> dict[str, dict]:
+    """Map task ID -> issue, from issues labeled `task`. If an ID has several issues, prefer the
+    lowest-numbered open one (duplicates usually come from re-running bootstrap before a fix)."""
     items = gh("issue", "list", "--repo", repo, "--label", "task", "--state", "all", "--limit", "1000",
                "--json", "number,title,state,url,labels", parse_json=True) or []
-    out = {}
+    by_id: dict[str, list[dict]] = {}
     for it in items:
-        m = re.match(r"^([A-Z0-9]+(?:-[A-Z0-9]+)?) — ", it["title"])
+        m = TASK_TITLE_RE.match(it["title"])
         if m:
-            out[m.group(1)] = it
+            by_id.setdefault(m.group(1), []).append(it)
+    if warn and items and not by_id:
+        print(f"warning: {len(items)} issues carry the `task` label but none has a title like "
+              f"'P1-02 — …'. First title seen: {items[0]['title']!r}", file=sys.stderr)
+    out = {}
+    for tid, its in by_id.items():
+        its.sort(key=lambda i: (i["state"] != "OPEN", i["number"]))
+        out[tid] = its[0]
+        if warn and len(its) > 1:
+            print(f"warning: {tid} has {len(its)} issues ({', '.join('#' + str(i['number']) for i in its)}); "
+                  f"using #{its[0]['number']}. Close the others as duplicates.", file=sys.stderr)
     return out
 
 
@@ -204,7 +226,12 @@ def set_field(cfg: dict, fields: dict, item_id: str, name: str, value: str) -> N
     if "options" in f:
         opt = next((o for o in f.get("options", []) if o["name"] == value), None)
         if opt is None:
-            raise SystemExit(f"Field '{name}' has no option '{value}'. Options: {[o['name'] for o in f.get('options', [])]}")
+            if name == "Status":
+                raise SystemExit(f"Status field has no option '{value}'. Add it in the Project settings (see docs/tasks/H-1.md).")
+            print(f"warning: Project field '{name}' has no option '{value}'; left unset. Add the option in the "
+                  f"Project settings, or delete the field and re-run bootstrap to recreate it with all options.",
+                  file=sys.stderr)
+            return
         gh(*base, "--single-select-option-id", opt["id"], mutate=True)
     else:
         gh(*base, "--text", value, mutate=True)
@@ -212,17 +239,60 @@ def set_field(cfg: dict, fields: dict, item_id: str, name: str, value: str) -> N
 
 # ---------------------------------------------------------------- commands
 
-def cmd_specs(_args) -> None:
-    for s in load_specs().values():
+REQUIRED_SECTIONS = {
+    "agent": ["## Goal", "## Read first", "## Deliverables", "## Specification", "## Acceptance",
+              "## Out of scope", "## Review focus"],
+    "human": ["## Goal", "## Steps"],
+}
+
+
+def check_specs(specs: dict[str, Spec]) -> list[str]:
+    problems = []
+    for s in specs.values():
+        text = s.path.read_text(encoding="utf-8")
+        kind = "human" if s.runs_on == "human" else "agent"
+        for sec in REQUIRED_SECTIONS[kind]:
+            if not re.search(rf"^{re.escape(sec)}", text, re.M):
+                problems.append(f"{s.id}: missing section '{sec}'")
+        if s.runs_on not in ("either", "local", "human"):
+            problems.append(f"{s.id}: Runs on must be either | local | human")
+        if s.size not in ("S", "M", "L", "XL"):
+            problems.append(f"{s.id}: Size must be S, M, L, or XL")
+    # cycle detection (DFS with colors)
+    color: dict[str, int] = {}
+    def visit(t: str, stack: list[str]) -> None:
+        color[t] = 1
+        for d in specs[t].depends:
+            if color.get(d) == 1:
+                problems.append("dependency cycle: " + " -> ".join(stack + [t, d]))
+            elif color.get(d) is None:
+                visit(d, stack + [t])
+        color[t] = 2
+    for t in specs:
+        if t not in color:
+            visit(t, [])
+    return problems
+
+
+def cmd_specs(args) -> None:
+    specs = load_specs()
+    if getattr(args, "check", False):
+        problems = check_specs(specs)
+        if problems:
+            print("\n".join("✗ " + p for p in problems))
+            sys.exit(1)
+        print(f"✓ {len(specs)} specs parse, dependencies resolve, no cycles, sections present.")
+        return
+    for s in specs.values():
         print(f"{s.id:7} {s.agent:17} {s.size:2} {s.runs_on:7} deps={','.join(s.depends) or '—':32} {s.title}")
 
 
-def issue_body(s: Spec, repo: str, numbers: dict[str, int]) -> str:
+def issue_body(s: Spec, repo: str, numbers: dict[str, int], branch: str) -> str:
     deps = ", ".join(f"#{numbers[d]} ({d})" if d in numbers else d for d in s.depends) or "—"
     how = ("This is a human step: follow the spec, then close this issue." if s.runs_on == "human" else
            f"Run locally with `/task {s.id}` in Claude Code" +
            ("" if s.runs_on == "local" else ", or add the `agent:run` label to run it on GitHub") + ".")
-    return (f"**Spec:** https://github.com/{repo}/blob/main/{s.path.relative_to(ROOT).as_posix()}\n"
+    return (f"**Spec:** https://github.com/{repo}/blob/{branch}/{s.path.relative_to(ROOT).as_posix()}\n"
             f"**Agent:** {s.agent} · **Size:** {s.size} · **Runs on:** {s.runs_on}\n"
             f"**Depends on:** {deps}\n\n"
             f"{s.goal}\n\n{how}\n\n"
@@ -235,9 +305,13 @@ def cmd_bootstrap(args) -> None:
     DRY_RUN = args.dry_run
     specs = load_specs()
     repo = repo_name()
+    branch = default_branch()
     owner = args.owner
 
-    for name, (color, desc) in LABELS.items():
+    labels = dict(LABELS)
+    for sp in specs.values():
+        labels.setdefault(f"phase:{sp.phase}", ("EDEDED", f"Phase {sp.phase[1:]}" if sp.phase != "Gate" else "Gates"))
+    for name, (color, desc) in labels.items():
         gh("label", "create", name, "--repo", repo, "--color", color, "--description", desc, "--force", mutate=True)
 
     if CONFIG_PATH.exists():
@@ -273,7 +347,7 @@ def cmd_bootstrap(args) -> None:
         if s.id in numbers:
             continue
         labels = ["task", f"runs:{s.runs_on}", f"phase:{s.phase}"] + (["human"] if s.runs_on == "human" else [])
-        a = ["issue", "create", "--repo", repo, "--title", s.issue_title, "--body", issue_body(s, repo, numbers)]
+        a = ["issue", "create", "--repo", repo, "--title", s.issue_title, "--body", issue_body(s, repo, numbers, branch)]
         for l in labels:
             a += ["--label", l]
         if s.runs_on == "human" and cfg.get("reviewer"):
@@ -285,7 +359,7 @@ def cmd_bootstrap(args) -> None:
     items = project_items(cfg) if CONFIG_PATH.exists() else {}
     for s in specs.values():
         n = numbers[s.id]
-        gh("issue", "edit", str(n), "--repo", repo, "--body", issue_body(s, repo, numbers), mutate=True)
+        gh("issue", "edit", str(n), "--repo", repo, "--body", issue_body(s, repo, numbers, branch), mutate=True)
         item_id = items.get(n)
         if item_id is None:
             res = gh("project", "item-add", str(cfg["number"]), "--owner", cfg["owner"],
@@ -320,6 +394,14 @@ def cmd_check(_args) -> None:
     problems += [f"Label '{l}' missing" for l in LABELS if l not in labels]
     issues = task_issues(cfg["repo"])
     problems += [f"No issue for {t}" for t in load_specs() if t not in issues]
+    raw = gh("issue", "list", "--repo", cfg["repo"], "--label", "task", "--state", "open", "--limit", "1000",
+             "--json", "title", parse_json=True) or []
+    counts: dict[str, int] = {}
+    for it in raw:
+        m = TASK_TITLE_RE.match(it["title"])
+        if m:
+            counts[m.group(1)] = counts.get(m.group(1), 0) + 1
+    problems += [f"{t} has {n} open issues (close duplicates)" for t, n in sorted(counts.items()) if n > 1]
     if problems:
         print("\n".join("✗ " + p for p in problems))
         sys.exit(1)
@@ -426,9 +508,14 @@ def cmd_comments(args) -> None:
 
 
 def main() -> None:
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8", errors="replace")
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = p.add_subparsers(dest="cmd", required=True)
-    sub.add_parser("specs").set_defaults(fn=cmd_specs)
+    sp = sub.add_parser("specs")
+    sp.add_argument("--check", action="store_true", help="validate sections, dependencies, and cycles")
+    sp.set_defaults(fn=cmd_specs)
     b = sub.add_parser("bootstrap")
     b.add_argument("--owner", required=True)
     b.add_argument("--reviewer", required=True, help="GitHub login of the human reviewer")

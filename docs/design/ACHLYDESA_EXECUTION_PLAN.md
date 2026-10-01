@@ -245,6 +245,8 @@ Hand-write only the anchor scenes from the campaign bible. Everything else is a 
 
 ## 5. Phases
 
+*Operational detail for every phase, including entry and exit gates, decisions to settle, candidate tasks, and how each phase's specs get written, lives in `docs/ROADMAP.md`. Phase 9 onward is numbered there as Phases 9–13.*
+
 Each phase has **Build**, **Gate** (the technical acceptance criteria drawn from the existing documents), and **Feeling gate** (a playtest question it must pass before moving on, even if the only tester is you). Spikes (§6) are interleaved.
 
 ### Phase 0 — One canon (docs only) · M

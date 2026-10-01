@@ -2,7 +2,7 @@
 
 This directory holds the **specs**: the source of truth for what each task builds, its dependencies, and where it may run. **Status lives on the GitHub Project board**, and each spec has one GitHub issue, created by `tools/scripts/gh_task.py bootstrap`. Edit the spec, never the generated issue body. Re-run `bootstrap` to push spec header changes to issues and the board.
 
-Phase 1 ends at feeling gate **G1**. Phase 2 specs are written only after G1, using what Phases 0–1 actually produced.
+Phase 1 ends at feeling gate **G1**. Every later phase is planned by its own task, `P<N>-00`, which writes that phase's specs from `docs/ROADMAP.md`, the actual code, and the previous gate. See `docs/ROADMAP.md` §How phases become tasks.
 
 ## Index
 
@@ -36,6 +36,35 @@ Phase 1 ends at feeling gate **G1**. Phase 2 specs are written only after G1, us
 | G1 | Feeling gate: read the march log aloud | Liam | S | P1-15 | human |
 | P1-16 | TUI trace viewer | task-implementer | M | P1-15 | local |
 | P1-S1 | Spike: Heliarch horizon plate | task-implementer | M | P1-05, P0-04 | local |
+
+### Planning and gates for Phases 2–13
+
+| ID | Title | Agent | Size | Depends on | Runs on |
+|---|---|---|---|---|---|
+| P2-00 | Plan Phase 2: The atlas | spec-writer | M | G1, P0-03, P0-07, P1-16 | either |
+| G2 | Feeling gate: the print test | Liam | S | P2-00 | human |
+| P3-00 | Plan Phase 3: Command trust | spec-writer | M | G2 | either |
+| G3 | Feeling gate: the replay grin | Liam | S | P3-00 | human |
+| P4-00 | Plan Phase 4: Blood | spec-writer | M | G3 | either |
+| G4 | Feeling gate: who died? | Liam | S | P4-00 | human |
+| P5-00 | Plan Phase 5: The road | spec-writer | M | G4 | either |
+| G5 | Feeling gate: the convoy arrives | Liam | S | P5-00 | human |
+| P6-00 | Plan Phase 6: The colossal | spec-writer | M | G5 | either |
+| G6 | Feeling gate: someone says something out loud | Liam | S | P6-00 | human |
+| P7-00 | Plan Phase 7: The monsters speak | spec-writer | M | G6 | either |
+| G7 | Feeling gate: laugh, then sick | Liam | S | P7-00 | human |
+| P8-00 | Plan Phase 8: Red Ledger | spec-writer | M | G7 | either |
+| G8 | Feeling gate: three outside testers | Liam | S | P8-00 | human |
+| P9-00 | Plan Phase 9: The scale gate | spec-writer | M | G8 | either |
+| G9 | Feeling gate: a week of theater in budget | Liam | S | P9-00 | human |
+| P10-00 | Plan Phase 10: Movement III | spec-writer | M | G9 | either |
+| G10 | Feeling gate: dependency without a clean choice | Liam | S | P10-00 | human |
+| P11-00 | Plan Phase 11: Movement IV | spec-writer | M | G10 | either |
+| G11 | Feeling gate: the nadir | Liam | S | P11-00 | human |
+| P12-00 | Plan Phase 12: The twenty-year cut | spec-writer | M | G11 | either |
+| G12 | Feeling gate: a name from before | Liam | S | P12-00 | human |
+| P13-00 | Plan Phase 13: Movements V–VI | spec-writer | M | G12 | either |
+| G13 | Feeling gate: the ending | Liam | S | P13-00 | human |
 
 **Runs on:** `either` — locally with `/task <ID>`, or on GitHub via the `agent:run` label. `local` — needs the raw terrain tiles on your machine (gitignored), so run it locally. `human` — yours.
 
