@@ -27,12 +27,12 @@ jobs:
       group: agent-revise-${{ github.event.pull_request.number }}
       cancel-in-progress: false
     env:
-      GH_TOKEN: ${{ secrets.ACHLYDESA_BOT_TOKEN }}
       HEAD_REF: ${{ github.event.pull_request.head.ref }}
       PR_NUMBER: ${{ github.event.pull_request.number }}
     steps:
       - name: Check secrets
         env:
+          GH_TOKEN: ${{ secrets.ACHLYDESA_BOT_TOKEN }}   # board/issue bookkeeping only
           CLAUDE_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
         run: |
           if [ -z "$GH_TOKEN" ]; then
@@ -52,6 +52,8 @@ jobs:
 
       - name: Identify task
         id: task
+        env:
+          GH_TOKEN: ${{ secrets.ACHLYDESA_BOT_TOKEN }}   # board/issue bookkeeping only
         run: |
           ID="$(printf '%s' "$HEAD_REF" | sed -nE 's#^task/([A-Z0-9]+(-[A-Z0-9]+)?)-.*#\1#p')"
           if [ -z "$ID" ] || [ ! -f "docs/tasks/$ID.md" ]; then echo "skip=1" >> "$GITHUB_OUTPUT"; exit 0; fi
@@ -67,8 +69,8 @@ jobs:
       - name: Toolchains
         if: steps.task.outputs.skip != '1'
         run: |
-          git config user.name  "achlydesa-bot"
-          git config user.email "achlydesa-bot@users.noreply.github.com"
+          git config user.name  "claude[bot]"
+          git config user.email "claude[bot]@users.noreply.github.com"
           if [ -f rust-toolchain.toml ]; then rustup show active-toolchain || rustup toolchain install; fi
 
       - name: Revise with Claude Code
@@ -76,7 +78,6 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          github_token: ${{ secrets.ACHLYDESA_BOT_TOKEN }}
           prompt: |
             You are running in GitHub Actions, non-interactively. Changes were requested on PR #${{ github.event.pull_request.number }}.
             Run task ${{ steps.task.outputs.id }} by following .claude/skills/task/SKILL.md exactly,
@@ -89,6 +90,7 @@ jobs:
       - name: Hand off for review
         if: steps.task.outputs.skip != '1'
         env:
+          GH_TOKEN: ${{ secrets.ACHLYDESA_BOT_TOKEN }}   # board/issue bookkeeping only
           ID: ${{ steps.task.outputs.id }}
         run: |
           python3 tools/scripts/gh_task.py handoff "$ID"
@@ -96,6 +98,7 @@ jobs:
       - name: Report failure on the PR
         if: failure()
         env:
+          GH_TOKEN: ${{ secrets.ACHLYDESA_BOT_TOKEN }}   # board/issue bookkeeping only
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           gh pr comment "$PR_NUMBER" --body "Agent revision failed. Log: $RUN_URL"
