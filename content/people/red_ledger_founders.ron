@@ -1,0 +1,9 @@
+// The Red Ledger founders. Ages are at A238; roles per Campaign Bible §6.
+[
+    (key: "ione_var", name: "Ione Var", age: 41, role: EscortCaptain, voice: "ione"),
+    (key: "tessa_ruun", name: "Tessa Ruun", age: 35, role: RecoveryChief, voice: "tessa"),
+    (key: "neris_vale", name: "Neris Vale", age: 29, role: Orderly, voice: "neris"),
+    (key: "petra_oss", name: "Petra Oss", age: 32, role: TransportLeader, voice: "petra"),
+    (key: "eren_tal", name: "Eren Tal", age: 19, role: GuardTrainee, voice: "eren"),
+    (key: "mara_den", name: "Mara Den", age: 78, role: ArchiveKeeper, voice: "mara"),
+]
