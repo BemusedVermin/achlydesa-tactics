@@ -1,6 +1,6 @@
 # ADR-0010 — The second generation's inheritance follows the Joining
 
-**Status:** Proposed
+**Status:** Accepted
 **Date:** 2026-10-01 · **Conflict:** C-10
 
 ## Context

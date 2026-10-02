@@ -1,6 +1,6 @@
 # ADR-0005 — Procedural portraits for every soldier
 
-**Status:** Proposed
+**Status:** Accepted
 **Date:** 2026-10-01 · **Conflict:** C-05
 
 ## Context

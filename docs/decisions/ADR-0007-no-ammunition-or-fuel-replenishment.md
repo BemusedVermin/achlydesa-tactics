@@ -1,6 +1,6 @@
 # ADR-0007 — No ammunition or fuel replenishment at baseline
 
-**Status:** Proposed
+**Status:** Accepted
 **Date:** 2026-10-01 · **Conflict:** C-07
 
 ## Context

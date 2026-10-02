@@ -1,6 +1,6 @@
 # ADR-0001 — The Joining: containment is possible
 
-**Status:** Proposed
+**Status:** Accepted
 **Date:** 2026-10-01 · **Conflict:** C-01
 
 ## Context

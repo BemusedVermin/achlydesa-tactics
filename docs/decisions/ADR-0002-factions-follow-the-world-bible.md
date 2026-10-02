@@ -1,6 +1,6 @@
 # ADR-0002 — Factions follow the World Bible
 
-**Status:** Proposed
+**Status:** Accepted
 **Date:** 2026-10-01 · **Conflict:** C-02
 
 ## Context

@@ -1,6 +1,6 @@
 # ADR-0004 — The atlas is the presentation
 
-**Status:** Proposed
+**Status:** Accepted
 **Date:** 2026-10-01 · **Conflict:** C-04
 
 ## Context
