@@ -91,7 +91,7 @@ Ranked by how many of the five features the window supplies, then by how strongl
 3. **B — Hisma / Rum.** Best Three Crossings fan, but a weak escarpment and a bland east half.
 4. **D — Harrat / Azraq.** Fails the escarpment requirement.
 
-**Recommendation: A**, provisionally, on the numbers. This is Liam's choice by eye; the images are the evidence. If A's Three Crossings problem matters, the cheapest fix is to slide A south by about 20 km (or mirror it) and re-run the three commands in ADR-0100 for the new tiles. Placement (P0-06) must not begin until a window is picked.
+**Selected: A** (Liam, PR #62 review). P0-06 places sites on window A. The remainder of this paragraph is the original reasoning. Recommendation: A, on the numbers; the images are the evidence. If A's Three Crossings problem matters, the cheapest fix is to slide A south by about 20 km (or mirror it) and re-run the three commands in ADR-0100 for the new tiles. A window is now picked, so P0-06 may begin.
 
 ## Attribution (for the eventual credits)
-Notice text and its source page are in ADR-0100. Whether shipped heightmaps count as adapted data (the longer "produced using" notice) is a question for Liam.
+Notice text and its source page are in ADR-0100. Liam accepted the longer "produced using" notice for now (PR #62 review). **Follow-up:** the game is not being sold, so this credit is adequate today, but the acknowledgement must be improved before any release; a later credits task should pick this up.
