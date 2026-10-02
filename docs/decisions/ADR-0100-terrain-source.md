@@ -1,6 +1,6 @@
 # ADR-0100 — Terrain source
 
-**Status:** Proposed
+**Status:** Accepted
 **Date:** 2026-10-01 · **Conflict:** none (new decision; task P0-05)
 
 ## Context
