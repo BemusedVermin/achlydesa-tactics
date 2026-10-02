@@ -54,6 +54,12 @@ version = "0.1.0"
 [[package]]
 name = "ach_sched"
 version = "0.1.0"
+dependencies = [
+ "ach_core",
+ "proptest",
+ "serde",
+ "thiserror",
+]
 
 [[package]]
 name = "ach_sim"
