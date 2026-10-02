@@ -1,6 +1,6 @@
 # ADR-0008 — Awe through atlas breaks and horizon plates
 
-**Status:** Proposed
+**Status:** Accepted
 **Date:** 2026-10-01 · **Conflict:** C-08
 
 ## Context

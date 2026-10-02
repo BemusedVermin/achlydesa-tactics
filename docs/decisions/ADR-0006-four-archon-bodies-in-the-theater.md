@@ -1,6 +1,6 @@
 # ADR-0006 — Four archon bodies in the theater
 
-**Status:** Proposed
+**Status:** Accepted
 **Date:** 2026-10-01 · **Conflict:** C-06
 
 ## Context

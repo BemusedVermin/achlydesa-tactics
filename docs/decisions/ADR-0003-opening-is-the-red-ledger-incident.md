@@ -1,6 +1,6 @@
 # ADR-0003 — The opening is the Red Ledger incident
 
-**Status:** Proposed
+**Status:** Accepted
 **Date:** 2026-10-01 · **Conflict:** C-03
 
 ## Context

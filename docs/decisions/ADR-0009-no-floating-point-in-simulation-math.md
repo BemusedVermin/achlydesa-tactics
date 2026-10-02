@@ -1,6 +1,6 @@
 # ADR-0009 — No floating point in simulation math
 
-**Status:** Proposed
+**Status:** Accepted
 **Date:** 2026-10-01 · **Conflict:** C-09
 
 ## Context
