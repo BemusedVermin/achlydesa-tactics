@@ -47,6 +47,12 @@ version = "0.1.0"
 [[package]]
 name = "ach_people"
 version = "0.1.0"
+dependencies = [
+ "ach_core",
+ "ron",
+ "serde",
+ "thiserror",
+]
 
 [[package]]
 name = "ach_plate"
