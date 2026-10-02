@@ -1,6 +1,6 @@
 # Terrain candidates
 
-**Status: PROPOSED.** Not authoritative. Source decision: `docs/decisions/ADR-0100-terrain-source.md` (Proposed). Real-region names are for Liam's reference only; none is for in-game use (the game never uses real place names).
+**Status: ACCEPTED.** Not authoritative. Source decision: `docs/decisions/ADR-0100-terrain-source.md` (Proposed). Real-region names are for Liam's reference only; none is for in-game use (the game never uses real place names).
 
 Four 150 × 150 km windows cut from Copernicus GLO-90 (90 m, 1500 × 1500 px = 100 m per pixel). Each image shows the 10 km grid (labels every 50 km, window-local), a 20 km scale bar, a north arrow, and numbered marks for the story features. Tints are the Field Atlas day palette for terrain fill: Low `#DDD2B8`, Middle `#BBBBA4`, High `#9C979B` (Field Atlas §3.1, table rows "Low ground", "Middle ground", "High ground", verified by grep). Tint bands are window-relative (5th percentile, median, 95th percentile), so tone is comparable inside one image, not between images. Hillshade: azimuth 315°, altitude 45°, no vertical exaggeration.
 
