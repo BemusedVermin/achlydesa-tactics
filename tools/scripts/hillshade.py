@@ -64,7 +64,8 @@ def window_bounds(sw_lat, sw_lon, size_km):
 
 
 def list_tiles(sw_lat, sw_lon, size_km):
-    """Print the GLO-90 tile URLs covering the window."""
+    """Print the GLO-90 tile URLs covering the window (LF line endings on every OS)."""
+    sys.stdout.reconfigure(newline="\n")
     lat0, lat1, lon0, lon1 = window_bounds(sw_lat, sw_lon, size_km)
     print(f"window: lat {lat0:.4f}..{lat1:.4f}, lon {lon0:.4f}..{lon1:.4f}")
     base = "https://copernicus-dem-90m.s3.eu-central-1.amazonaws.com"
@@ -85,6 +86,7 @@ def sample_window(np, rasterio, tiles, sw_lat, sw_lon, size_km, px):
     lon = sw_lon + np.degrees(xs / (R_KM * math.cos(math.radians(lat_mid))))
     lon_g, lat_g = np.meshgrid(lon, lat)
     out = np.full((px, px), np.nan, dtype=np.float64)
+    loaded = []
     for path in tiles:
         with rasterio.open(path) as src:
             data = src.read(1).astype(np.float64)
@@ -93,8 +95,17 @@ def sample_window(np, rasterio, tiles, sw_lat, sw_lon, size_km, px):
             inv = ~src.transform
             col = inv.a * lon_g + inv.b * lat_g + inv.c - 0.5  # pixel centres
             row = inv.d * lon_g + inv.e * lat_g + inv.f - 0.5
+            loaded.append((data, col, row))
+    # Pass 0 uses only points strictly between pixel centres of a tile. Pass 1 lets
+    # a tile claim the half-pixel margin beyond its outermost centres (clamped), so
+    # the seams between adjacent tiles are filled rather than left as no-data lines.
+    for margin in (0.0, 0.5):
+        for data, col, row in loaded:
             h, w = data.shape
-            inside = (col >= 0) & (col <= w - 1) & (row >= 0) & (row <= h - 1)
+            inside = (
+                (col >= -margin) & (col <= w - 1 + margin)
+                & (row >= -margin) & (row <= h - 1 + margin)
+            )
             if not inside.any():
                 continue
             c = np.clip(col, 0, w - 1)
@@ -165,10 +176,10 @@ def annotate(Image, ImageDraw, ImageFont, img, px, size_km, grid_km, marks):
         col = (176, 40, 30, 255)
         if len(pts) > 1:
             d.line(pts, fill=col, width=4)
-        for (x, y) in pts[:1] if len(pts) > 1 else pts:
-            d.ellipse([x - 14, y - 14, x + 14, y + 14], fill=col, outline=(255, 255, 255, 255), width=2)
-            d.text((x - 5, y - 9), str(m["n"]), fill=(255, 255, 255, 255), font=font)
-        lx, ly = pts[0][0] + 18, pts[0][1] - 10
+        mx, my = pts[len(pts) // 2]  # disc and label sit on the middle point
+        d.ellipse([mx - 14, my - 14, mx + 14, my + 14], fill=col, outline=(255, 255, 255, 255), width=2)
+        d.text((mx - 5, my - 9), str(m["n"]), fill=(255, 255, 255, 255), font=font)
+        lx, ly = mx + 18, my - 10
         w = d.textlength(m["label"], font=font)
         d.rectangle([lx - 3, ly - 2, lx + w + 3, ly + 20], fill=(255, 255, 255, 200))
         d.text((lx, ly), m["label"], fill=(120, 20, 15, 255), font=font)
