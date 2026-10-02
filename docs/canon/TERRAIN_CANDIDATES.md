@@ -9,7 +9,7 @@ Coordinates below are **window-local km from the SW corner: x east, y north**. W
 ## How the marks were placed (read this before trusting a coordinate)
 Marks are **candidate positions**, not canon, and not a site plan (that is P0-06). They come from measurements on a 300 m resample of the same data, plus judgment:
 - **1 Road.** I chose 3-5 waypoints by eye on the render (a long basin, plain, or valley running roughly north-south). A least-cost router then snapped a path between them, minimising slope (cost 1 + (slope/6°)², no cells steeper than 22°, flat 0 m sea excluded, an extra cost on drainage lines so the path crosses them instead of running down them). The unconstrained least-cost route ran along the window edge, which is why waypoints were needed.
-- **2 Escarpment.** Cells steeper than 15° on the 300 m grid; the mark is the cell nearest the road in the stated range.
+- **2 Escarpment.** Cells steeper than 15° on the 300 m grid. Marks in B and C are the steep cell nearest y = 75 within 8 km of the road (D has none). A's mark was picked by hand on the Edom rim: the nearest steep cell is 0.6 km from the road, but that is a small local step, so I used the continuous rim at 8.9 km.
 - **3 Reedbank.** A drainage line the road crosses, from a priority-flood D8 flow accumulation. I picked a crossing with a catchment of about 200–330 km², "secondary" next to the largest trunk in the window.
 - **4 Three Crossings.** Three separate drainage crossings (catchments over 36 km², at least 2 km apart along the road) within 20 km of road. The windows' best sets are given.
 - **5 High ground.** Largest block of the top 10 % of the window's elevations, or a feature read by eye (the crater in A).
@@ -47,7 +47,7 @@ Road figures (300 m grid): A 160 km, mean slope 0.8°, steepest cell 8.6°; B 15
 - **Escarpment (2):** the eastern rim, nearest steep cells at (71, 38.5), 8.9 km east of the road. A second steep line, a western bluff at (67, 110), lies about 7 km west of the road.
 - **Reedbank (3):** (63, 51), catchment about 200 km². The great trunk wadi crosses the same road at (67, 86), about 5,500 km², much too large to call secondary.
 - **Three Crossings (4):** the best set is at the **south edge**: (57, 4), (56, 6), (56, 10), catchments 50–70 km². They are small, and an edge feature is poor: expect to move the window south or change the road. The road also meets the trunk and one tributary at (67, 86) and (66.5, 93), only two within 20 km.
-- **High ground (5):** an erosion crater at about (56, 107), marked by eye on the render (not measured), and the Edom plateau east of the rim, up to 1,725 m near (95, 41), 32 km from the road.
+- **High ground (5):** an erosion crater at about (56, 107), marked by eye on the render (not measured), and the Edom plateau east of the rim, up to 1,725 m, in a block whose centroid is (95, 41), 32 km from the road.
 - **Risks:** feature 4 is the weak one. The road itself runs from -400 m to +398 m, so the northern end sits near the bottom of the rift.
 
 ## B — Hisma basin / Rum massifs
@@ -57,7 +57,7 @@ Road figures (300 m grid): A 160 km, mean slope 0.8°, steepest cell 8.6°; B 15
 - **Corridor (1):** (75, 2) to (75, 70), (78, 100), (80, 148); 156 km, mean slope 1.2°, roads on a plain.
 - **Escarpment (2): weak.** A step in the plateau around (78, 75) with only 87 cells over 15° within 12 km of the road; the strong relief is the massif belt 20–25 km west of the road, not an escarpment beside it.
 - **Reedbank (3):** (77.5, 29.5), catchment about 325 km².
-- **Three Crossings (4):** (77.5, 110.5), (77, 116), (76, 121): a fan of six crossings between y = 108 and y = 123, catchments 40–140 km². The most separable set of the four windows.
+- **Three Crossings (4):** (77.5, 110.5), (77, 116), (76, 121): a fan of six crossings between y = 108 and y = 123, catchments 40–140 km². Six crossings in 15 km, the most in any window's best 20 km (A 3, C 3, D 3, at catchments over 36 km²).
 - **High ground (5):** the plateau to the north-west (about 1,715 m near (54, 119), 23 km from the road) and the massif belt around (51, 23) up to 1,837 m.
 - **Risks:** the eastern half is a featureless plain; the eye wanders, and so would the player.
 
@@ -79,7 +79,7 @@ Road figures (300 m grid): A 160 km, mean slope 0.8°, steepest cell 8.6°; B 15
 - **Corridor (1):** (75, 2) to (75, 148); 150 km, mean slope 0.7°, steepest cell 2.9°.
 - **Escarpment (2): none.** No cell in the window exceeds 15° within 12 km of the road, and there is no escarpment mark for D. The relief range is 505–1,800 m, but spread over a gentle slope in the west.
 - **Reedbank (3):** (75.5, 85.6), catchment about 150 km².
-- **Three Crossings (4):** (75, 56), (75, 65), (75.5, 72): three crossings of 90–160 km² catchments in 17 km.
+- **Three Crossings (4):** (75, 56), (75, 65), (75.5, 72): three crossings of 90–165 km² catchments in 17 km.
 - **High ground (5): weak.** One broad rise in the west (about 1,800 m at its top, centre (26, 86)), 48 km from the road, with no steep faces.
 - **Risks:** fails feature 2 and is weak on 5.
 
