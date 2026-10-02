@@ -6,3 +6,12 @@ publish.workspace = true
 
 [lints]
 workspace = true
+
+[dependencies]
+ach_core = { path = "../ach_core" }
+serde = { version = "1", features = ["derive"] }
+ron = "0.12"
+thiserror = "2"
+
+[dev-dependencies]
+proptest = "1"

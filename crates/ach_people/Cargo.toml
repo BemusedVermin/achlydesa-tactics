@@ -9,6 +9,6 @@ workspace = true
 
 [dependencies]
 ach_core = { path = "../ach_core" }
-ron = "0.8"
+ron = "0.12"
 serde = { version = "1", features = ["derive"] }
 thiserror = "2"

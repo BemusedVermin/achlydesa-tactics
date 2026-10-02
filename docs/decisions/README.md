@@ -14,4 +14,4 @@ Architecture and canon decision records. An ADR with **Status: Accepted** outran
 | [ADR-0008](ADR-0008-awe-through-atlas-breaks-and-horizon-plates.md) | Awe through atlas breaks and horizon plates (C-08) | Accepted |
 | [ADR-0009](ADR-0009-no-floating-point-in-simulation-math.md) | No floating point in simulation math (C-09) | Accepted |
 | [ADR-0010](ADR-0010-second-generation-inheritance-follows-the-joining.md) | The second generation's inheritance follows the Joining (C-10) | Accepted |
-| [ADR-0100](ADR-0100-terrain-source.md) | Terrain source (P0-05) | Proposed |
+| [ADR-0100](ADR-0100-terrain-source.md) | Terrain source (P0-05) | Accepted |
