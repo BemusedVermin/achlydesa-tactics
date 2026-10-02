@@ -9,9 +9,11 @@ extern crate self as ach_core;
 pub mod error;
 pub mod hash;
 pub mod ids;
+pub mod journal;
 pub mod pos;
 pub mod qty;
 pub mod rng;
+pub mod snapshot;
 pub mod time;
 
 /// Re-export used by `define_id!` so downstream crates need not name `serde` themselves.
@@ -21,9 +23,14 @@ pub use serde as __serde;
 pub use error::CoreError;
 pub use hash::fnv1a64;
 pub use ids::IdAllocator;
+pub use journal::{
+    FORMAT_VERSION, FileHeader, JournalEntry, JournalReader, JournalWriter, MAGIC_JOURNAL,
+    MAGIC_SNAPSHOT, MAGIC_TERRAIN, MAX_FRAME_BYTES, read_header, write_header,
+};
 pub use pos::{CM_PER_M, ElevationCm, LevelId, WorldPos};
 pub use qty::{Milli, PerMille};
 pub use rng::{
     Domain, RngCursor, Seed, StreamKey, choose_weighted, draw_below, draw_permille, draw_u64, mix64,
 };
+pub use snapshot::{read_snapshot, write_snapshot};
 pub use time::{SimDuration, SimTime};
