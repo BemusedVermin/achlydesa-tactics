@@ -30,7 +30,7 @@ When documents disagree, precedence is (highest first):
 6. `ACHLYDESA_SIMULATION_AND_PLAYER_INTERACTIONS.md` — gameplay rules.
 7. `ACHLYDESA_EXPERIENCE_BIBLE.md` — the affect bus, awe, despair, hope, satire (not authoritative while its status line is `PROPOSED`).
 8. `ACHLYDESA_EXECUTION_PLAN.md` — build plan, stack, experience layer.
-9. `ACHLYDESA_STRATEGY_RPG_HIGH_LEVEL_DESIGN.md` — **stale until task P0-02 is done**; use only for what nothing above covers.
+9. `ACHLYDESA_STRATEGY_RPG_HIGH_LEVEL_DESIGN.md` — **revised by P0-02**; use only for what nothing above covers.
 
 Planning: `docs/ROADMAP.md` lists every phase and how its tasks get written (by a `P<N>-00` planning task run by the `spec-writer` agent). It is a plan, not canon.
 
