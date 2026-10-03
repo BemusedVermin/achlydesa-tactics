@@ -1,0 +1,24 @@
+---
+source: crates/ach_text/src/expand.rs
+expression: "lines.join(\"\\n\")"
+---
+06:40. Moving. 12 fit; 340 L left.
+twelve on the road, water at 340 L.
+Out of camp at 06:40. Walked 12.4 km.
+We left before light. 12 walking; 340 L left.
+twelve on the road, water at 340 L.
+Walked 12.4 km.
+06:40. Moving. 12 walking; 340 L left.
+twelve on the road, water at 340 L.
+Out of camp at 06:40. Walked 12.4 km.
+12 fit; 340 L left.
+We left before light. twelve on the road, water at 340 L.
+Walked 12.4 km.
+06:40. Moving. 12 fit; 340 L left.
+Out of camp at 06:40. twelve on the road, water at 340 L.
+Walked 12.4 km.
+12 walking; 340 L left.
+We left before light. twelve on the road, water at 340 L.
+Walked 12.4 km.
+12 fit; 340 L left.
+06:40. Moving. twelve on the road, water at 340 L.
