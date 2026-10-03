@@ -1,0 +1,17 @@
+// Per-person, per-hour consumption in milli-units of each stock's base unit
+// (Water: 450 = 450 mL). TUNING values, not canon.
+// Water rates follow the premise of High-Level Design §11.3: water is tracked physically
+// because it constrains desert operations. Marching at 450 mL/h is 10.8 L per person-day;
+// a resting person needs 3.6 L. Food is 42 milli-rations/h, about one ration per day.
+// All other kinds are zero for Phase 1 and are simply omitted.
+(
+    status: "TUNING",
+    rates: {
+        (Water, Marching): Milli(450),
+        (Water, Halted): Milli(200),
+        (Water, Resting): Milli(150),
+        (Food, Marching): Milli(42),
+        (Food, Halted): Milli(42),
+        (Food, Resting): Milli(42),
+    },
+)
