@@ -1,9 +1,9 @@
 # Achlydesa Strategy RPG — High-Level Design
 
-**Status:** Consolidated high-level design; command, caravan opening, unified grid, and repair-only technology clarified 25 September 2026  
+**Status:** Revised 2026-10-03 by P0-02 to apply ADR-0001…ADR-0010  
 **Working title:** To be determined  
 **Genre:** Continuous-theater WEGO military RPG  
-**Setting:** Achlydesa, approximately twenty years across two generations  
+**Setting:** Achlydesa, two generations separated by roughly twenty years  
 **Primary fantasy:** Command a persistent army whose people, equipment, doctrine, relationships, victories, failures, and dead all become history.
 
 ---
@@ -12,7 +12,7 @@
 
 **The game is about commanding a force through a war that continues everywhere at once.** The player chooses where to operate, what to achieve, which positions and targets matter, and how to sustain the force. Subordinates turn those decisions into movement, observation, fighting, maintenance, and recovery.
 
-The opening follows a small caravan escort. A reactivated Soterion checkpoint attempts to seize the caravan, and defending it places the guards in conflict with Strategos's enforcement apparatus. Surviving that incident draws the emerging coalition into a regional struggle over the buried junction that issued the order. The proposed checkpoint incident and faction organizations below are game-specific additions; the Archons and Soterion derive from the current world bible.
+The opening follows a small caravan escort. At an inspection station, an officer enforces a backdated directive against valid papers, and defending the caravan places the guards in conflict with Strategos's enforcement apparatus. Afterward an old roadside terminal recognizes a rejected claim, and the emerging coalition is drawn into a regional struggle over the buried junction. The Archons, polities, and Soterion derive from the world bible; the opening derives from the campaign bible.
 
 | Design commitment | Player experience |
 |---|---|
@@ -30,7 +30,7 @@ The ordinary decision cycle is: **assess reports → choose the objective → as
 
 The player still directly commands squads and support elements. Task forces provide selection, shared priorities, and bulk orders; an additional autonomous general does not take those units away from the player. Delegation happens inside the order, where trained people choose how to accomplish it.
 
-Existing campaign decisions retained here include a persistent army rather than one irreplaceable avatar, event-driven WEGO, a typical concentration of 15–25 squads/support elements, and the two-generation story. The newest brief takes precedence where it narrows earlier technology provisions. Numerical terrain resolutions, travel examples, new faction names, and opening details are proposals to validate in a prototype.
+Existing campaign decisions retained here include a persistent army rather than one irreplaceable avatar, event-driven WEGO, a typical concentration of 15–25 squads/support elements, and the two-generation story. The newest brief takes precedence where it narrows earlier technology provisions. Numerical terrain resolutions and travel examples are proposals to validate in a prototype.
 
 ---
 
@@ -44,7 +44,7 @@ The game combines:
 - multiple independent task forces that remain physical and active everywhere on that theater;
 - physical logistics, communications, reconnaissance, recovery, and restoration of useful bases;
 - an RPG roster of named people organized into freely composed squads;
-- a generational story in which relationships and institutions from the first campaign determine the descendants, cells, doctrines, and ruins available after an inevitable catastrophe.
+- a generational story in which relationships and institutions from the first campaign determine the descendants, cells, doctrines, and ruins available after the Joining, whose outcome their preparation shapes.
 
 Tactical command is the main attraction. Long-distance movement, preparation, intelligence, logistics, bases, and political consequences create the circumstances of combat without becoming a separate campaign mode. The player should spend time making military decisions, not performing clerical work.
 
@@ -179,9 +179,9 @@ The normal controllable piece is a **five-to-eight-person squad** containing any
 
 A typical concentrated engagement may contain approximately **15–25 friendly squads and support elements**, but there is no fixed encounter roster or arbitrary army cap. Force size is limited by available people, trained leaders, equipment, instructors, bases, transport, supply, and political willingness. Rapid expansion dilutes leadership, training, cohesion, maintenance, and supply until institutions catch up.
 
-Every soldier remains a persistent agent. Distant or unobserved forces use lower-frequency and event-driven simulation without receiving different rules. The camera zooms seamlessly from accurate formation symbols to visible individual soldiers.
+Every soldier remains a persistent agent. Distant or unobserved forces use lower-frequency and event-driven simulation without receiving different rules. The atlas zooms seamlessly from theater-scale symbols to formation counters; an individual soldier is known through a dossier and portrait, not drawn on the map.
 
-The theater uses one authoritative **2.5D** geometry: a continuous heightfield with authored cliffs, bridges, walls, and discrete building floors. The isometric camera snaps among four cardinal angles. Buildings use cutaway roofs and layered floors in place, with authored entrances and structural breakpoints. Macro-geography, settlements, routes, Archon regions, and story sites are authored; procedural systems provide vegetation, clutter, minor damage, and local variation.
+The theater uses one authoritative **2.5D** geometry: a continuous heightfield with authored cliffs, bridges, walls, and discrete building floors. The map is a north-up, top-down field atlas: height, occlusion, floors, bridges, and line of sight are simulation properties, shown through a floor selector and section diagram when needed. Buildings have discrete floors with authored entrances and structural breakpoints. Macro-geography, settlements, routes, Archon regions, and story sites are authored; procedural systems provide vegetation, clutter, minor damage, and local variation.
 
 ### 5.2 Continuous terrain
 
@@ -485,7 +485,7 @@ Squads remain unified unless a qualified leader or subleader issues a temporary 
 Every generic soldier has:
 
 - a name;
-- a portrait;
+- a procedural portrait generated from the character's seed and service history;
 - an origin and basic history;
 - skills and aptitudes;
 - personality tendencies;
@@ -710,7 +710,7 @@ The player may later formalize, reject, or revise these habits. Formal doctrine 
 
 Doctrine is primarily army-wide with a few task-force-level overrides. Individual leaders still interpret it.
 
-After the generational catastrophe, descendant cells inherit incomplete, altered, or mythologized versions of the original doctrine. Reuniting cells can produce conflict over which tradition is authentic.
+In the second generation, descendant groups inherit incomplete, altered, or mythologized versions of the original doctrine. Reuniting cells can produce conflict over which tradition is authentic.
 
 ---
 
@@ -748,7 +748,7 @@ The player chooses a capability to restore and its priority. Engineers estimate:
 
 Routine inspection and maintenance then run automatically. The command decision is whether the recovered capability justifies its opportunity cost.
 
-**Consumable boundary:** food and water remain renewable through surviving civilian activity. The provisional strict reading for military technology is finite ammunition and manufactured spares, recoverable fuel stocks, and rechargeable existing power stores where functioning energy infrastructure survives. No new advanced vehicles, weapons, electronics, or research. Whether restored old facilities may replenish mundane ammunition or fuel is a remaining scope decision; the baseline must work without that permission. Campaign duration and expenditure must be balanced against this finite inventory rather than relying on unexplained replenishment.
+**Consumable boundary:** food and water remain renewable through surviving civilian activity. The provisional strict reading for military technology is finite ammunition and manufactured spares, recoverable fuel stocks, and rechargeable existing power stores where functioning energy infrastructure survives. No new advanced vehicles, weapons, electronics, or research. Ammunition, manufactured spares, and processed military fuel stay finite in all baseline content. A per-facility content flag, default off, may later let a named restored facility produce a bounded quantity of one stock kind; using it requires an explicit rate, source capacity, and a recorded decision after the *Red Ledger* playtest. Campaign duration and expenditure must be balanced against this finite inventory rather than relying on unexplained replenishment.
 ---
 
 ## 17. Enemy simulation
@@ -783,19 +783,19 @@ Military defeat is dynamic. A faction ends only through an official surrender or
 
 ## 18. The two-generation campaign
 
-### 18.0 The caravan opening — proposed playable premise
+### 18.0 The caravan opening: the Red Ledger incident
 
-The player begins as the caravan's guard commander, with a few understrength squads, working transports, and a small repair capability. They are competent hired guards with obligations to their passengers and employers. The army grows out of the people and resources that survive.
+The player is the unseen general, command authority rather than an authored individual, already coordinating the caravan's defense. Ione Var, the escort captain, is the visible officer who turns intent into field action. The force is a few understrength squads, working transports, and a small repair capability: competent hired guards with obligations to their passengers and employers. The army grows out of the people and resources that survive.
 
-At an old Soterion transit checkpoint, a caravan technician uses a surviving maintenance credential to restore passage. A dormant connection answers from a buried regional junction. The checkpoint reclassifies the caravan as requisitionable continuity material and orders its people and equipment detained.
+On the Dry Meridian road, at a Marches inspection station, Captain Varo Kest receives a directive whose effective date precedes the caravan's departure. He has wounded soldiers, too few clinical supplies, and promotion tied to recovering requisitioned stock. He enforces the order knowing the civilian papers were valid, and impounds the disputed travelers and part of the medical freight.
 
-A human enforcement detachment serving Strategos arrives to collect them. Negotiation can reveal the demand and buy time, but the detachment will not accept the caravan's independent departure. The guards must resist seizure, protect an escape, or break out after partial capture. They fight a local force and checkpoint defenses; they do not defeat the Archon in the tutorial.
+The player can seek time, move vulnerable passengers out of reach, prepare a covered withdrawal, or negotiate an exchange. Kest's standing orders still require impoundment, and an official extraction team advances if the guards do not surrender the travelers. The guards never have to fire first to start the plot, and they do not defeat the Archon in the tutorial. An orderly retreat with lost cargo is a success.
 
-The resulting self-defense is recorded as interference with Strategos's protected infrastructure. Surviving reports and the checkpoint's transmissions carry that classification onward. Pursuit comes from actual enforcement forces, with finite knowledge, routes, and competing assignments.
+Strategos's court then records the caravan's survival as an attack on continuity. Pursuit comes from actual enforcement forces, with finite knowledge, routes, and competing assignments.
 
-The caravan retains evidence of the junction's return: recovered maintenance records, an operator's testimony, or a partial transmission. No single invulnerable person or unique object must survive for the story to continue. The junction existed before the caravan arrived; the incident makes its renewed reach visible.
+Afterward an old roadside terminal recognizes one of the rejected travel claims under a dormant public-service routing instruction. This is the first sign that the current courts' authority is neither universal nor technically necessary. The junction existed before the caravan arrived; the incident makes its reach visible. No single invulnerable person or unique object must survive for the story to continue, and no one in the caravan carries a key.
 
-The next settlement is dependent on the same route and receives an order to surrender the fugitives. That creates the first broader choice: secure temporary shelter, expose the seizure order, negotiate with a rival patron, or leave before retaliation. The coalition forms through shared exposure and practical agreements. Joining a revolutionary cause is a possible development, not an assumed opening personality.
+The next settlement, Reedbank, loses its relief contracts for having given the fugitives water. The coalition could abandon it and remain itinerant fugitives; reopening its relief road turns self-defense into insurgency, and several plans and degrees of support are possible. Joining a revolutionary cause is a development the player chooses, not an assumed opening personality.
 
 ### 18.0a What the junction actually controls
 
@@ -812,19 +812,18 @@ Its value is concentrated interoperability. A faction that restores enough links
 
 The game distinguishes **holding the site**, **operating a limited service**, and **submitting a force to integration**. Those states have different requirements and consequences. Control can be divided, contested, sabotaged, or relinquished.
 
-### 18.0b Factions contesting it — proposed organizations
+### 18.0b Powers contesting it
 
-These organizations are additions for the game, not names already established in the world bible. The Archons' existing forms and offices remain authoritative.
+The contenders are the polities of the world bible, not invented organizations; the theater has seven and no others. The Archons' existing forms and offices remain authoritative.
 
-| Faction | What it wants from the junction | Military character | Source of dependence or tension |
+| Polity | What it wants from the junction | Military character | Source of dependence or tension |
 |---|---|---|---|
-| Strategos's Custodians | Restore an enforcement jurisdiction and neutralize unauthorized access | Automated defenses with human detachments, strong local protection, escalating threat classification | Its own protection system can reject ceasefire signals; people within it may still negotiate |
-| Heliarchic Mandate | Bind surviving energy and sensing links to the Heliarch's authority | Surveillance-supported forces, control of exposed routes, scarce powerful assets | Weather and the Archon's movements complicate its own plans; services sustain dependent towns |
-| Gate Compact of Pylaios | Control authenticated passage between surviving transport endpoints | Mobile escorts, route garrisons, transport leverage | Gate capacity, access, and the human cost of transmission limit apparent mobility |
-| Autophagan Delegation | Incorporate junction services into the moving city's support relationships | Cohesive forces organized around the city and its needs | The army's home is itself an Archon's body; civilian and military survival are entangled |
-| Free Cistern League | Keep water, roads, and restoration sites usable without a single master | Local defense forces, guides, repair crews, uneven interoperability | Towns disagree over obligations and how much central command to accept |
+| Assurance Marches | Restore an enforcement jurisdiction and neutralize unauthorized access | Garrisons and inspections, automated defenses with human detachments, escalating threat classification | Its own protection system can reject ceasefire signals; people within it may still negotiate |
+| Threshold Principalities | Control authenticated passage and recognition on arrival between surviving transport endpoints | Mobile escorts, route garrisons, transport leverage | Gate capacity, access, and the human cost of transmission limit apparent mobility |
+| Shell Commonwealth | Incorporate junction services into the moving city's support relationships | Cohesive forces organized around the city and its needs | The city is inside an Archon's body; civilian and military survival are entangled |
+| Basin Commonwealth (municipal companies and towns) | Keep water, roads, and restoration sites usable without a single master | Local defense forces, guides, repair crews, uneven interoperability | Reformers and creditors disagree, and towns differ over obligations and how much central command to accept |
 
-Anodyne, Aletheia, and Mneme remain important powers through medical bargains, surveillance arrangements, and access to surviving records. Their clients can support or divide the main contenders. Only three or four Archons are physically present across the vast theater; influence does not require crowding every monster onto the playable map.
+The Heliarch has a court but no state. His interest reaches the junction as patronage and as weather and fire pressure on the others; his own movements complicate his plans. The Lamp Concord (Anodyne), Clear Republic (Aletheia), and Ribbon Houses (Mneme) remain important through medical bargains, surveillance arrangements, and access to surviving records. Their clients can support or divide the main contenders. Four Archon bodies are physically present (§18.1); influence does not require crowding every monster onto the playable map.
 
 Factions pursue practical regional goals even without the player. A claimant may seek a transit agreement, an operator, or a power connection before attempting the junction itself. Rivalries and commitments explain why the starting escort survives between stronger forces.
 
@@ -834,13 +833,13 @@ The first campaign moves from **survival**, through **coalition-building and con
 
 A deadline has an in-world cause: an approaching detachment, an agreed handover, a failing facility, or an opponent's repair progress. Missing it changes ownership or available options. Factions physically prepare operations and can succeed while the player is elsewhere.
 
-The retained two-generation design includes an unavoidable rupture at the junction. That is an explicit boundary on the sandbox: the world is open in how the coalition acts and what it saves, while the central catastrophe is authored. The story must not pretend the player can permanently prevent it. If the coalition rejects activation, another prepared claimant can precipitate the rupture; the player then shapes containment and evacuation rather than personally authorizing integration.
+The retained two-generation design includes a central crisis at the junction, the Joining (§18.2). A regional synchronization attempt cannot be wished away: several courts are already restoring links, and if the coalition refuses, another prepared claimant will try. Its outcome is not fixed. The world is open in how the coalition acts and what it saves, and the player's preparation decides how the crisis ends. The twenty-year jump follows in every branch.
 
-The junction does not mind-control the entire roster in a cutscene. The catastrophe follows connected infrastructure, transmitted records, and established dependencies. First-generation precautions materially change who is exposed, which links can be severed, and what survives.
+The junction does not mind-control the entire roster in a cutscene. The Joining follows connected infrastructure, transmitted records, and established dependencies. First-generation precautions materially change who is exposed, which links can be severed, and what survives.
 
 ### 18.1 First generation
 
-The coalition's route crosses a subcontinental theater in which **three or four Archons are physically present and widely separated**. Other Archons exert military, political, ecological, or infrastructural influence from beyond the playable region. The seven powers most important to the story are:
+The coalition's route crosses a subcontinental theater in which **four Archon bodies are physically present and widely separated**: Anodyne, Heliarch, Autophagos, and Strategos. The other three reach the theater without a roaming body: Mneme's river crosses it, Pylaios has a single gate endpoint, and Aletheia acts through relays. The seven powers most important to the story are:
 
 - **Autophagos** — mobile city-state, metabolism, and sovereign ecology;
 - **Heliarch** — flying inverted whale, weather, energy, sensing, and oil;
@@ -854,13 +853,19 @@ A buried Soterion coordination junction begins operating again. Its early effect
 
 The coalition's apparent victories teach the junction its organization. Communications, doctrine, personnel records, relationships, logistics, and command procedures gradually become legible as missing Soterion components.
 
-### 18.2 The catastrophe
+### 18.2 The Joining
 
-The midpoint is an inevitable, large playable operation.
+The midpoint is a large playable operation: the regional synchronization attempt.
 
-In the central false-victory path, the coalition activates the junction believing it has secured independent command. Its connected command network is recognized as part of the Soterion. Integration begins physically and administratively. Alternative approaches change who initiates activation and the coalition's exposure, while preserving the established rupture.
+In the false-victory path, the coalition activates the junction believing it has secured independent command. Its connected command network is recognized as part of the Soterion. Integration begins physically and administratively. Alternative approaches change who initiates activation and how exposed the coalition is.
 
-The player cannot prevent the rupture. The operation instead asks impossible questions about what to save:
+Preparation decides the result: isolated approaches, dispersed authority, independent power and dispatch, evacuations, and which relays were cut. Rival claimants act too, but their ability to force reconnection depends on infrastructure they actually hold. There are three results:
+
+- **Broad integration:** the Joining incorporates much of the coalition's service and command administration; some people are excluded or trapped by reassigned authority.
+- **Emergency severance:** the army stops incorporation after it begins, accepting a difficult withdrawal and the loss of linked services.
+- **Prepared containment:** earlier isolation, dispersed authority, and successful operations prevent local mass incorporation. It is a real, expensive success that forgoes short-term benefits and leaves a weaker federation.
+
+Whichever result holds, the operation asks impossible questions about what to save:
 
 - sever one relay and abandon the forces beyond it;
 - preserve people or records;
@@ -869,7 +874,7 @@ The player cannot prevent the rupture. The operation instead asks impossible que
 - maintain communications and expose a cell to integration;
 - save a commander, engineer, partner, prisoner, settlement, or archive at another's expense.
 
-First-half choices determine individual fates and what survives. Most veterans disappear through a mixture of confirmed death, unresolved disappearance, captivity, and transformation.
+First-half choices determine individual fates and what survives. Each person's fate (confirmed death, unresolved disappearance, captivity, transformation, or continued service) results from those choices; none is a default.
 
 ### 18.3 Twenty years later
 
@@ -882,9 +887,9 @@ Its starting nucleus is determined by the first generation's affinity network an
 - apprentices;
 - engineered descendants.
 
-Upbringing is simulated deterministically from relationships, guardianship, shared history, location, institutions, and catastrophe outcomes. The player does not select childhood bonuses from a menu. Their influence occurred through first-generation assignments and affinities.
+Upbringing is simulated deterministically from relationships, guardianship, shared history, location, institutions, and Joining outcomes. The player does not select childhood bonuses from a menu. Their influence occurred through first-generation assignments and affinities.
 
-The new coalition begins with fragmented cells, caches, a few damaged bases, partial records, disputed doctrines, and inherited enemies. Its primary drive is to rebuild the coalition and prevent any faction or Archon from completing the junction's integration.
+The new coalition's starting situation follows the Joining result: a continuity regime with surviving resistance enclaves (broad integration), independent towns around a sealed junction (emergency severance), or a weaker organized federation (prepared containment). Fragmented cells, caches, a few damaged bases, and partial records describe the resistance enclaves of the first state, not every start. In each, doctrines are disputed and enemies are inherited. Its drive is to rebuild the coalition and prevent any faction or Archon from completing the junction's integration.
 
 Surviving first-generation characters are exceptional presences rather than the default roster. Some may return as prisoners, altered beings, hidden patrons, enemies, or unresolved mysteries.
 
@@ -1035,8 +1040,8 @@ The following are coherent enough for the high-level design but remain deliberat
 - performance budgets use simulation frequency, aggregation, and event-driven updates rather than an in-world unit cap;
 - a small set of story-critical conditions may force reload while the larger plot absorbs ordinary character death;
 - the square grid's provisional resolution and physical-scale streaming architecture require performance validation;
-- named faction organizations and the checkpoint incident are proposed game additions;
-- finite military consumables are the baseline until the scope of old-facility replenishment is decided.
+- the junction's bounded functions (§18.0a) are proposed game additions;
+- finite military consumables are the baseline; old-facility replenishment stays off unless a later decision turns the content flag on.
 
 ---
 
@@ -1049,7 +1054,7 @@ This high-level design establishes the game's identity and system relationships.
 3. **Character and relationship specification** — skills, traits, affinity, disobedience, leadership, development, succession, and deterministic upbringing.
 4. **Unified theater architecture** — streaming, authoritative geometry, event-driven simulation, time advancement, map knowledge, task forces, and seamless local-to-distant command.
 5. **Logistics and equipment specification** — stocks, presets, transport, maintenance, recovery, restoration, and finite technological dependencies.
-6. **Campaign narrative architecture** — factions, first-generation arcs, catastrophe state transfer, descendant-cell generation, and second-generation reconstruction.
+6. **Campaign narrative architecture** — factions, first-generation arcs, Joining state transfer, descendant-cell generation, and second-generation reconstruction.
 7. **Content vertical slice** — one continuous corridor containing three settlements, two factions, one Archon-linked system, one base, and a complete operation from reconnaissance through aftermath.
 
 ---
@@ -1065,3 +1070,22 @@ Any proposed mechanic should answer yes to at least one of these questions:
 - Does it express Achlydesa through material consequences?
 
 If it adds recurring input without improving one of those decisions, automate it, summarize it, or remove it.
+
+---
+
+## Revision notes (P0-02)
+
+| ADR | Sections changed | Summary |
+|---|---|---|
+| ADR-0001 | §1 High concept; §18.0c; §18.2 (retitled "The Joining"); §18.3 | The rupture is no longer unavoidable: a synchronization attempt is certain, its result depends on preparation, and containment is a reachable success. |
+| ADR-0002 | §18.0b (retitled "Powers contesting it") | Invented organizations replaced by the world bible's polities; the Heliarchic Mandate is retired. |
+| ADR-0003 | Executive brief; §18.0 (retitled "The caravan opening: the Red Ledger incident"); §23 | The opening is Kest's backdated directive; the junction is found afterward through a roadside terminal. The player is the unseen general (cosmetic C-11). |
+| ADR-0004 | §5.1 | Isometric camera, cutaway roofs, and visible individual soldiers removed; the north-up atlas stays. |
+| ADR-0005 | §9.3 | Every soldier has a procedural portrait generated from seed and service history. |
+| ADR-0006 | §18.0b (closing paragraph); §18.1 | Four archon bodies (Anodyne, Heliarch, Autophagos, Strategos) plus three intrusions. |
+| ADR-0007 | §16.4; §23 | Finite ammunition and fuel at baseline; a content flag, default off, replaces the open scope question. |
+| ADR-0008 | none | The High-Level Design has no section on awe presentation. |
+| ADR-0009 | none | The High-Level Design has no floating-point statement. |
+| ADR-0010 | §15; §18.2; §18.3; §24 item 6 | Inheritance is one of three states keyed to the Joining result; no veteran fate is a default. |
+| ADR-0100 | none | Terrain source decision; it needs no High-Level Design change. |
+| Ledger C-12 (cosmetic) | Header Setting line | The span is two generations separated by roughly twenty years. |
