@@ -7,21 +7,27 @@ disable-model-invocation: true
 
 Run task **$ARGUMENTS**. This works identically in a local Claude Code session and in GitHub Actions. `gh` is authenticated (ideally as the bot). Use `python3 tools/scripts/gh_task.py` (below: `T`) for all board and issue lookups. **If any `T` command fails, stop and report its full error output. Never continue past a failed board or readiness command.** **In GitHub Actions** (`GITHUB_ACTIONS=true`) the workflow does the board bookkeeping itself: it checks readiness and sets In Progress before you start, and sets Awaiting review after you finish. There, skip the `T stage` calls in steps 4 and 10.
 
+## Operating rules (they apply to every step)
+
+- **One command per Bash call.** No `cd` (you are already at the repo root), and no `;`, `&&`, `||`, pipes, `$?`, or redirection (`>`). Chained or redirected commands are refused by the permission system. A failed command's exit status is shown to you automatically.
+- **To save output to a file**, use the script's `--out` option or the Write tool. Scratch files go in `.agent/`, which is gitignored.
+- **Subagents run in the foreground.** Launch each subagent and wait for its result before doing anything else. Never run one in the background. Never end your turn while a subagent or any step below is unfinished: in GitHub Actions, ending your turn ends the job and kills the subagent.
+
 1. **Load.** Read `docs/tasks/$ARGUMENTS.md`. If its *Runs on* is `human`, stop: human steps are not run by agents. If it is `local` and the environment variable `GITHUB_ACTIONS` is `true`, comment on the task issue that it must run locally, and stop.
 
 2. **Readiness.** Run `T ready $ARGUMENTS`. If it exits non-zero, report the blockers (in Actions: as a comment on the task issue) and stop.
 
 3. **Mode.** Run `T pr $ARGUMENTS --json`.
-   - An open PR with `revision_requested: true` puts you in **revision mode**. Save `T review $ARGUMENTS` to `.git/achlydesa-review-$ARGUMENTS.md`. These review notes override the spec where they conflict.
+   - An open PR with `revision_requested: true` puts you in **revision mode**. Run `T review $ARGUMENTS --out .agent/review-$ARGUMENTS.md`. These review notes override the spec where they conflict.
    - An open PR without a revision request means stop: the PR is awaiting review. Print its URL.
-   - With no open PR you are in **fresh mode**. Save `T comments $ARGUMENTS` to `.git/achlydesa-comments-$ARGUMENTS.md`. Maintainer comments on the issue are additional requirements; they carry feedback such as G1 notes on a reopened task.
+   - With no open PR you are in **fresh mode**. Run `T comments $ARGUMENTS --out .agent/comments-$ARGUMENTS.md`. Maintainer comments on the issue are additional requirements; they carry feedback such as G1 notes on a reopened task.
 
 4. **Branch.**
-   - Fresh: `git fetch origin && git checkout -B task/$ARGUMENTS-<slug> origin/master`, with the slug from the spec's *Branch slug*.
-   - Revision: `git fetch origin && git checkout <branch from step 3> && git pull --ff-only`.
+   - Fresh: run `git fetch origin`, then `git checkout -B task/$ARGUMENTS-<slug> origin/master`, with the slug from the spec's *Branch slug*.
+   - Revision: run `git fetch origin`, then `git checkout <branch from step 3>`, then `git pull --ff-only`.
    - Locally, run `T stage $ARGUMENTS in-progress` **before** delegating, so the board shows the work as soon as it starts.
 
-5. **Delegate.** Launch the subagent named in the spec's *Agent* field with: "Execute task $ARGUMENTS. Spec: docs/tasks/$ARGUMENTS.md." Add "Additional requirements: .git/achlydesa-comments-$ARGUMENTS.md" in fresh mode if that file has content. Add "Revision mode. Review feedback: .git/achlydesa-review-$ARGUMENTS.md. Address every item or explain why not." in revision mode.
+5. **Delegate.** Launch the subagent named in the spec's *Agent* field with: "Execute task $ARGUMENTS. Spec: docs/tasks/$ARGUMENTS.md." Add "Additional requirements: .agent/comments-$ARGUMENTS.md" in fresh mode if that file has content. Add "Revision mode. Review feedback: .agent/review-$ARGUMENTS.md. Address every item or explain why not." in revision mode.
 
 6. **Verify.** Run every command under the spec's *Acceptance* yourself, plus `cargo xtask ci` if `Cargo.toml` exists. On failure, send the output back to the same subagent type (at most two rounds). If it still fails, continue and report the failure honestly.
 
@@ -31,10 +37,10 @@ Run task **$ARGUMENTS**. This works identically in a local Claude Code session a
 
 9. **Pull request.**
    - **Fresh mode:**
-     - Write the PR body from `.github/pull_request_template.md` into `.git/achlydesa-pr-$ARGUMENTS.md`.
+     - Write the PR body from `.github/pull_request_template.md` into `.agent/pr-$ARGUMENTS.md`.
      - Fill in every section: the subagent's summary, files changed, your acceptance results table, deviations, open questions, the audit verdict and unresolved findings, and artifacts (embed images from `docs/artifacts/$ARGUMENTS/` with raw GitHub links on the branch).
      - Include `Closes #<issue number from T issue $ARGUMENTS>`.
-     - Then run `gh pr create --base master --title "$ARGUMENTS — <spec title>" --body-file .git/achlydesa-pr-$ARGUMENTS.md --label task`, plus `--reviewer <reviewer from .github/project.json>` when the PR author is not the reviewer.
+     - Then run `gh pr create --base master --title "$ARGUMENTS — <spec title>" --body-file .agent/pr-$ARGUMENTS.md --label task`, plus `--reviewer <reviewer from .github/project.json>` when the PR author is not the reviewer.
    - **Revision mode:**
      - Post one PR comment starting `## Revision N`. List each feedback item with what changed, or why it did not, followed by updated acceptance results and the audit verdict.
      - Remove the `changes-requested` label if present: `gh pr edit <n> --remove-label changes-requested`.

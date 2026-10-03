@@ -17,8 +17,8 @@ Commands:
   stage ID STAGE                     Set the board Status: todo | in-progress | awaiting-review | changes-requested | done.
   pr ID [--json]                     Show the open task PR (task/ID-*), its review decision, and whether a revision is requested.
   handoff ID                         Require an open task PR, set Awaiting review, print the PR URL.
-  review ID                          Print review feedback on the open task PR since the agent's last "## Revision" comment.
-  comments ID                        Print human comments on the task issue (extra requirements, e.g. after G1).
+  review ID [--out F]                Print (or write) review feedback on the open task PR since the agent's last "## Revision" comment.
+  comments ID [--out F]              Print (or write) maintainer comments on the task issue (extra requirements, e.g. after G1).
 """
 from __future__ import annotations
 
@@ -644,7 +644,7 @@ def cmd_review(args) -> None:
     for c in view.get("comments", []):
         if c["author"]["login"] != bot and trusted(c.get("authorAssociation")) and c["createdAt"] > since:
             out.append(f"## Comment by {c['author']['login']}\n{c['body']}\n")
-    print("\n".join(out) if len(out) > 1 else out[0] + "\n(No new feedback.)")
+    emit("\n".join(out) if len(out) > 1 else out[0] + "\n(No new feedback.)", getattr(args, "out", None))
 
 
 TRUSTED = {"OWNER", "MEMBER", "COLLABORATOR"}
@@ -655,16 +655,25 @@ def trusted(assoc: str | None) -> bool:
     return (assoc or "").upper() in TRUSTED
 
 
+def emit(text: str, out: str | None) -> None:
+    """Print, or write to a file (parents created) so agents never need shell redirection."""
+    if out:
+        path = Path(out)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text + "\n", encoding="utf-8")
+        print(f"Wrote {path} ({len(text)} chars)")
+    else:
+        print(text)
+
+
 def cmd_comments(args) -> None:
     cfg = load_config()
     n = issue_for(args.id, cfg["repo"])["number"]
     view = gh("issue", "view", str(n), "--repo", cfg["repo"], "--json", "comments,author", parse_json=True)
     humans = [c for c in view.get("comments", []) if not c["author"]["login"].endswith("[bot]")
               and c["author"]["login"] != view["author"]["login"] and trusted(c.get("authorAssociation"))]
-    if not humans:
-        print("(No maintainer comments.)")
-    for c in humans:
-        print(f"## {c['author']['login']} — {c['createdAt']}\n{c['body']}\n")
+    text = "\n".join(f"## {c['author']['login']} — {c['createdAt']}\n{c['body']}\n" for c in humans)
+    emit(text or "(No maintainer comments.)", getattr(args, "out", None))
 
 
 def main() -> None:
@@ -693,6 +702,8 @@ def main() -> None:
                      ("review", cmd_review), ("comments", cmd_comments)):
         c = sub.add_parser(name)
         c.add_argument("id")
+        if name in ("review", "comments"):
+            c.add_argument("--out", help="write to this file instead of printing")
         c.set_defaults(fn=fn)
     s = sub.add_parser("stage")
     s.add_argument("id")
