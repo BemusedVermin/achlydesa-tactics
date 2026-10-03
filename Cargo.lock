@@ -78,6 +78,18 @@ dependencies = [
 [[package]]
 name = "ach_sim"
 version = "0.1.0"
+dependencies = [
+ "ach_core",
+ "ach_logistics",
+ "ach_people",
+ "ach_sched",
+ "ach_world",
+ "insta",
+ "proptest",
+ "ron",
+ "serde",
+ "thiserror",
+]
 
 [[package]]
 name = "ach_text"

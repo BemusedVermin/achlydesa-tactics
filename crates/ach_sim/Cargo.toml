@@ -6,3 +6,21 @@ publish.workspace = true
 
 [lints]
 workspace = true
+
+[features]
+# Enables `Sim::insert_accounting_checkpoint` for tests outside this crate.
+test-hooks = []
+
+[dependencies]
+ach_core = { path = "../ach_core" }
+ach_world = { path = "../ach_world" }
+ach_sched = { path = "../ach_sched" }
+ach_people = { path = "../ach_people" }
+ach_logistics = { path = "../ach_logistics" }
+ron = "0.12"
+serde = { version = "1", features = ["derive"] }
+thiserror = "2"
+
+[dev-dependencies]
+insta = "1"
+proptest = "1"
