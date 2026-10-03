@@ -3,7 +3,7 @@
 #
 # Identity: Claude acts through the Claude GitHub App (OIDC; needs id-token: write), so its PRs and
 # comments appear as claude[bot] and you can approve them. ACHLYDESA_BOT_TOKEN (a classic PAT with
-# repo + project scopes; your own account is fine) is used only by the shell steps for the Project
+# repo, workflow, project, read:org, read:discussion; your own account is fine) is used only by the shell steps for the Project
 # board and issue comments, which the App token cannot do, and as git push credentials.
 name: Agent task
 on:
@@ -22,7 +22,7 @@ permissions:
 jobs:
   run:
     if: github.event_name == 'workflow_dispatch' || github.event.label.name == 'agent:run'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04   # pinned: reproducible toolchain; revisit deliberately
     timeout-minutes: 150
     concurrency:
       group: agent-task-${{ github.event.issue.number || inputs.task_id }}
@@ -46,7 +46,7 @@ jobs:
             exit 1
           fi
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
           token: ${{ secrets.ACHLYDESA_BOT_TOKEN }}   # git push credentials; pushes by a PAT trigger CI (GITHUB_TOKEN pushes would not)
@@ -98,6 +98,7 @@ jobs:
 
       - name: Run task with Claude Code
         if: steps.task.outputs.skip != '1' && steps.ready.outputs.skip != '1'
+        id: claude
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}   # or: anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -108,7 +109,15 @@ jobs:
           claude_args: |
             --model sonnet
             --max-turns 250
-            --allowedTools "Read,Write,Edit,MultiEdit,Glob,Grep,Agent,Task,TodoWrite,WebSearch,WebFetch,Bash(cargo:*),Bash(git:*),Bash(gh:*),Bash(python3:*),Bash(pip:*),Bash(rustup:*),Bash(ls:*),Bash(mkdir:*),Bash(cat:*),Bash(grep:*),Bash(wc:*),Bash(diff:*),Bash(sha256sum:*)"
+            --allowedTools "Read,Write,Edit,MultiEdit,Glob,Grep,Agent,Task,TodoWrite,WebSearch,WebFetch,Bash(cargo:*),Bash(rustup:*),Bash(git:*),Bash(gh:*),Bash(python3:*),Bash(python:*),Bash(pip:*),Bash(pip3:*),Bash(ls:*),Bash(cd:*),Bash(pwd),Bash(cat:*),Bash(head:*),Bash(tail:*),Bash(grep:*),Bash(find:*),Bash(wc:*),Bash(sort:*),Bash(uniq:*),Bash(cut:*),Bash(tr:*),Bash(sed:*),Bash(awk:*),Bash(jq:*),Bash(diff:*),Bash(cmp:*),Bash(echo:*),Bash(printf:*),Bash(test:*),Bash(mkdir:*),Bash(touch:*),Bash(cp:*),Bash(mv:*),Bash(rm:*),Bash(sha256sum:*),Bash(which:*),Bash(xargs:*),Bash(tee:*),Bash(basename:*),Bash(dirname:*),Bash(file:*),Bash(curl:*),Bash(wget:*),Bash(unzip:*),Bash(gunzip:*),Bash(tar:*)"
+
+      - name: Summarize the Claude run
+        if: always() && steps.claude.outcome != 'skipped' && steps.claude.outcome != ''
+        env:
+          EXEC_FILE: ${{ steps.claude.outputs.execution_file }}
+        run: |
+          python3 tools/scripts/claude_run_summary.py "${EXEC_FILE:-/nonexistent}" > "$RUNNER_TEMP/claude-summary.md"
+          cat "$RUNNER_TEMP/claude-summary.md" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Hand off for review
         if: steps.task.outputs.skip != '1' && steps.ready.outputs.skip != '1'
@@ -125,4 +134,5 @@ jobs:
           GH_TOKEN: ${{ secrets.ACHLYDESA_BOT_TOKEN }}   # board/issue bookkeeping only
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
-          gh issue comment "$ISSUE_NUMBER" --body "Agent run failed. Log: $RUN_URL"
+          { echo "Agent run failed. Log: $RUN_URL"; echo; cat "$RUNNER_TEMP/claude-summary.md" 2>/dev/null; } > "$RUNNER_TEMP/failure.md"
+          gh issue comment "$ISSUE_NUMBER" --body-file "$RUNNER_TEMP/failure.md"
