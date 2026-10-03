@@ -106,10 +106,12 @@ jobs:
             You are running in GitHub Actions, non-interactively.
             Run task ${{ steps.task.outputs.id }} by following .claude/skills/task/SKILL.md exactly,
             with $ARGUMENTS = ${{ steps.task.outputs.id }}. `gh` is authenticated as the Claude GitHub App. The workflow does all board bookkeeping; do not run `gh_task.py stage` or `handoff`.
+            Follow the skill's operating rules: one command per Bash call (no cd, ;, &&, pipes, or redirects);
+            run subagents in the foreground and wait for them; do not end your turn until the PR is open or updated.
           claude_args: |
             --model sonnet
             --max-turns 250
-            --allowedTools "Read,Write,Edit,MultiEdit,Glob,Grep,Agent,Task,TodoWrite,WebSearch,WebFetch,Bash(cargo:*),Bash(rustup:*),Bash(git:*),Bash(gh:*),Bash(python3:*),Bash(python:*),Bash(pip:*),Bash(pip3:*),Bash(ls:*),Bash(cd:*),Bash(pwd),Bash(cat:*),Bash(head:*),Bash(tail:*),Bash(grep:*),Bash(find:*),Bash(wc:*),Bash(sort:*),Bash(uniq:*),Bash(cut:*),Bash(tr:*),Bash(sed:*),Bash(awk:*),Bash(jq:*),Bash(diff:*),Bash(cmp:*),Bash(echo:*),Bash(printf:*),Bash(test:*),Bash(mkdir:*),Bash(touch:*),Bash(cp:*),Bash(mv:*),Bash(rm:*),Bash(sha256sum:*),Bash(which:*),Bash(xargs:*),Bash(tee:*),Bash(basename:*),Bash(dirname:*),Bash(file:*),Bash(curl:*),Bash(wget:*),Bash(unzip:*),Bash(gunzip:*),Bash(tar:*)"
+            --allowedTools "Read,Write,Edit,MultiEdit,Glob,Grep,Agent,Task,Skill,TodoWrite,BashOutput,WebSearch,WebFetch,Bash(cargo:*),Bash(rustup:*),Bash(git:*),Bash(gh:*),Bash(python3:*),Bash(python:*),Bash(pip:*),Bash(pip3:*),Bash(ls:*),Bash(cd:*),Bash(pwd),Bash(cat:*),Bash(head:*),Bash(tail:*),Bash(grep:*),Bash(find:*),Bash(wc:*),Bash(sort:*),Bash(uniq:*),Bash(cut:*),Bash(tr:*),Bash(sed:*),Bash(awk:*),Bash(jq:*),Bash(diff:*),Bash(cmp:*),Bash(echo:*),Bash(printf:*),Bash(test:*),Bash(mkdir:*),Bash(touch:*),Bash(cp:*),Bash(mv:*),Bash(rm:*),Bash(sha256sum:*),Bash(which:*),Bash(xargs:*),Bash(tee:*),Bash(basename:*),Bash(dirname:*),Bash(file:*),Bash(curl:*),Bash(wget:*),Bash(unzip:*),Bash(gunzip:*),Bash(tar:*)"
 
       - name: Summarize the Claude run
         if: always() && steps.claude.outcome != 'skipped' && steps.claude.outcome != ''
