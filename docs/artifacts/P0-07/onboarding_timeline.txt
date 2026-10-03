@@ -1,0 +1,23 @@
+$ python3 docs/artifacts/P0-07/onboarding_timeline.py        (run 2026-10-03)
+inspection point at road km 31.5; terminal at road km 37.5; road length 99.4 km
+tour length 170.8 km, 8.54 h
+
+Beat 6 window: terminal to Reedbank = (junction - terminal) + spur, at each pace
+  pace 18 km/d: 38.5 km / 18 km/d = 2.14 d = 51 h
+  pace 24 km/d: 38.5 km / 24 km/d = 1.60 d = 38 h
+  pace 30 km/d: 38.5 km / 30 km/d = 1.28 d = 31 h
+
+pace 18 km/d  entry day 0: peak  17.2 deg at tour h 3.2, road km  31.5, slant   7.9 km; 1 deg at tour h 0.0 (road km 31.5, 65 km)
+pace 18 km/d  entry day 1: peak  30.0 deg at tour h 3.8, road km  47.2, slant   4.5 km; 1 deg at tour h 0.0 (road km 44.3, 75 km)
+pace 18 km/d  entry day 2: peak  28.8 deg at tour h 4.8, road km  65.9, slant   4.7 km; 1 deg at tour h 0.0 (road km 62.3, 91 km)
+pace 18 km/d  entry day 3: peak  24.4 deg at tour h 5.6, road km  84.5, slant   5.6 km; 1 deg at tour h 0.0 (road km 80.3, 106 km)
+
+pace 24 km/d  entry day 0: peak  17.2 deg at tour h 3.2, road km  31.5, slant   7.9 km; 1 deg at tour h 0.0 (road km 31.5, 65 km)
+pace 24 km/d  entry day 1: peak  29.9 deg at tour h 4.1, road km  52.6, slant   4.5 km; 1 deg at tour h 0.0 (road km 48.5, 79 km)
+pace 24 km/d  entry day 2: peak  45.4 deg at tour h 5.3, road km  77.9, slant   2.9 km; 1 deg at tour h 0.0 (road km 72.5, 100 km)
+pace 24 km/d  entry day 3: peak   9.1 deg at tour h 6.1, road km 102.7, slant  15.1 km; 1 deg at tour h 0.0 (road km 96.5, 118 km)
+
+pace 30 km/d  entry day 0: peak  17.2 deg at tour h 3.2, road km  31.5, slant   7.9 km; 1 deg at tour h 0.0 (road km 31.5, 65 km)
+pace 30 km/d  entry day 1: peak  25.2 deg at tour h 4.4, road km  58.2, slant   5.4 km; 1 deg at tour h 0.0 (road km 52.8, 82 km)
+pace 30 km/d  entry day 2: peak  15.5 deg at tour h 5.8, road km  90.0, slant   8.8 km; 1 deg at tour h 0.0 (road km 82.8, 108 km)
+pace 30 km/d  entry day 3: peak   9.1 deg at tour h 6.1, road km 120.5, slant  15.1 km; 1 deg at tour h 0.0 (road km 112.8, 120 km)
