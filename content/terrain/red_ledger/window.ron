@@ -1,0 +1,26 @@
+// Red Ledger terrain window. Status PROPOSED. Spec: docs/tasks/P0-06.md; narrative: docs/canon/RED_LEDGER_REGION.md.
+// Source and window choice: docs/decisions/ADR-0100-terrain-source.md (Copernicus GLO-30) and docs/canon/TERRAIN_CANDIDATES.md (window A).
+// Local frame: x east, y north, integer metres, origin at the SW corner of the region AFTER the transform below.
+// Transform order: mirror_x (flip the real window west-east), then rotate counter-clockwise by rotate_deg.
+// rotate_deg 270 (= 90 clockwise) turns real north into game east and real east into game south.
+// Real-world coordinates are for sourcing only; the game never uses real place names.
+(
+  source: "copernicus-glo30",
+  tiles: [
+    "Copernicus_DSM_COG_30_N30_00_E034_00_DEM.tif",
+    "Copernicus_DSM_COG_30_N30_00_E035_00_DEM.tif",
+    "Copernicus_DSM_COG_30_N30_00_E036_00_DEM.tif",
+    "Copernicus_DSM_COG_30_N31_00_E034_00_DEM.tif",
+    "Copernicus_DSM_COG_30_N31_00_E035_00_DEM.tif",
+    "Copernicus_DSM_COG_30_N31_00_E036_00_DEM.tif",
+  ],
+  sw_lat_lon: (30.0, 34.6),
+  extent_m: (150000, 150000),
+  transform: (rotate_deg: 270, mirror_x: false),
+  base_spacing_m: 30,
+  // 96 x 24 km. All of Cistern Camp to Reedbank by road lies inside it.
+  strip_p1: (min: (6000, 74000), max: (102000, 98000)),
+  // 30 x 30 km. Holds the inspection station, the North Bluff and all three crossings. It is taller than
+  // strip_p1 (30 km against 24 km), so it cannot lie wholly inside the strip; it is inside in x and overlaps in y.
+  corridor_p3: (min: (33000, 71000), max: (63000, 101000)),
+)
