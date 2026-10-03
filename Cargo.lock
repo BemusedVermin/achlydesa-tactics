@@ -35,6 +35,13 @@ version = "0.1.0"
 [[package]]
 name = "ach_logistics"
 version = "0.1.0"
+dependencies = [
+ "ach_core",
+ "proptest",
+ "ron",
+ "serde",
+ "thiserror",
+]
 
 [[package]]
 name = "ach_narrative"
