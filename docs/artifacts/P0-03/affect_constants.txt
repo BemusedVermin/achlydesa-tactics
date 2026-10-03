@@ -1,0 +1,61 @@
+== 1. Trace decay constants (ppm per simulated minute) ==
+awe_flinch_trace: half-life 360 min -> 1924 ppm/min
+grief_trace: half-life 30240 min -> 23 ppm/min
+hope_trace: half-life 4320 min -> 160 ppm/min
+
+== 2. Angular-size lookup: x_pm = 500*s/d ; theta_cdeg = 2*atan(x_pm/1000) in 0.01 deg ==
+knots (x_pm, theta_cdeg): [(0, 0), (50, 572), (100, 1142), (200, 2262), (300, 3340), (400, 4360), (500, 5313), (600, 6193), (800, 7732), (1000, 9000), (1250, 10268), (1500, 11262), (1750, 12051), (2000, 12687), (2500, 13640), (3000, 14313), (3500, 14811), (4000, 15193), (5000, 15738), (6000, 16108), (7000, 16374), (8000, 16575)]
+max interpolation error over x_pm 0..8000: 45.0 cdeg at x_pm=2245 (limit 50 cdeg = 0.5 deg)
+
+== 3. Awe ladder: theta (cdeg) -> awe (0..900) ==
+AWE_ANGLE knots: [(0, 0), (30, 0), (100, 120), (300, 260), (700, 420), (1500, 600), (2500, 720), (4500, 820), (10000, 900)]
+AWE_AGE knots (hours -> permille): [(0, 1000), (6, 800), (48, 450), (240, 200), (720, 100)]
+case | theta_cdeg (LUT) | exact deg | awe at age 0 h | awe at age 48 h
+heliarch overhead 3 km cruise | 4360 | 43.60 | 813 | 365
+heliarch 20 km ground, cruise 3 km | 674 | 6.79 | 409 | 184
+heliarch overhead 1 km (min alt) | 10014 | 100.39 | 900 | 405
+autophagos 10 km (largest dim 4000) | 2262 | 22.62 | 691 | 310
+anodyne 3 km ground, 1.5 km alt (bell 1000) | 1690 | 16.96 | 622 | 279
+strategos wings 15 km ground, 2 km alt | 2239 | 22.43 | 688 | 309
+pylaios 2 km | 857 | 8.58 | 455 | 204
+heliarch first sighting 120 km | 102 | 1.15 | 121 | 54
+
+== 4. Dread / tension / hope tables ==
+squad overdue ratio r (permille): {500: 0, 1000: 0, 3000: 275, 6000: 525, 20000: 800}
+deadline minutes: {-5: 350, 0: 350, 30: 300, 180: 190, 720: 67, 5000: 0}
+tension urgency minutes: {0: 150, 30: 113, 120: 50, 500: 0}
+hope kept delta: {1: 40, 3: 75, 12: 161, 60: 285, 400: 350}
+hope kept level: {0: 0, 5: 30, 31: 96, 412: 241, 2000: 300}
+max sums: dread 1600 -> clipped to 1000; tension 1100 -> clipped to 1000
+
+== 5. Grief trace example (PROPOSED weights) ==
+w(soldier, close) = 96 ; w(founder, close) = 360 ; w(named, acquaintance) = 160
+Roll: 3 soldiers (close) + 1 founder (close): trace hit = 648 output units
+grief trace output by day after acknowledgement: {0: 648, 7: 518, 21: 334, 42: 177, 70: 83} (output = max(trace, floor); floor with 1 founder dead = 25)
+
+== 6. Flinch awe trace ==
+awe floor (900 + trace/10000) by hours after coincidence: {0.0: 1000, 6.0: 950, 12.0: 925, 24.0: 906, 48.0: 900, 168.0: 900}
+
+== 7. Ink fade: contrast of quantized steps ==
+day: contrast vs Paper for steps 0..7: [9.73, 8.92, 8.11, 7.36, 6.6, 5.99, 5.43, 4.88]
+night: contrast vs Paper for steps 0..7: [10.69, 10.05, 9.45, 8.86, 8.38, 7.84, 7.32, 6.9]
+fade_step by age in hours (expected interval 6 h): {1: 0, 12: 0, 24: 1, 48: 3, 72: 5, 96: 7, 264: 7}
+
+== 8. Sound arithmetic ==
+anodyne 880 Hz detuned +5 cents -> 882.55 Hz, beat 2.55 Hz
+anodyne 880 Hz detuned +12 cents -> 886.12 Hz, beat 6.12 Hz
+anodyne 880 Hz detuned +40 cents -> 900.57 Hz, beat 20.57 Hz
+anodyne cents = 5 + 35*dread/1000: {0: 5, 500: 22, 1000: 40}
+autophagos bpm = 40 + tension/50: {0: 40, 500: 50, 1000: 60}
+strategos stations = 3 + awe/200: {0: 3, 400: 5, 900: 7, 1000: 8}
+strategos call slot = 0.36 s checks + 0.40 s tail + 1.5 s quiet = 2.26 s; round of 8 = 18.1 s
+heliarch sweep 220 -> 55 Hz: 2.0 octaves in 14 s = 7.0 s per octave
+sub-bass gain dB = -48 + 36*awe/1000: {0: -48, 500: -30, 900: -16, 1000: -12}
+
+== 9. Plate and palette arithmetic ==
+plate pixels 57600 ; 2-bit bytes 14400 ; px per degree at 120 deg FOV 4.0 ; vertical FOV deg 30.0
+pylaios first sighting 0.3 deg: 1.2 px wide
+heliarch 20 km 6.8 deg: 27.2 px wide
+heliarch overhead 43.6 deg (fits inside the 120 deg FOV): 174.4 px wide
+hue shift limit 30 per mille of the hue circle = 10.8 degrees
+palette shift dh_pm = clamp((hope - max(dread, grief)) * 30 // 1000, -30, 30): {(0, 0): 0, (800, 0): 24, (800, 1000): -6, (0, 1000): -30, (300, 400): -3}
