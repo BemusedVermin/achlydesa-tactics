@@ -635,15 +635,24 @@ def cmd_review(args) -> None:
     inline = json.loads(gh("api", f"repos/{cfg['repo']}/pulls/{n}/comments", "--paginate") or "[]")
     out = [f"# Review feedback for {args.id} (PR #{n}) since {since or 'the PR opened'}\n"]
     for r in view.get("reviews", []):
-        if r["author"]["login"] != bot and r.get("submittedAt", "") > since and (r.get("body") or r["state"] != "COMMENTED"):
+        if (r["author"]["login"] != bot and trusted(r.get("authorAssociation")) and r.get("submittedAt", "") > since
+                and (r.get("body") or r["state"] != "COMMENTED")):
             out.append(f"## Review by {r['author']['login']} — {r['state']}\n{r.get('body') or '(no summary)'}\n")
     for c in inline:
-        if c["user"]["login"] != bot and c["created_at"] > since:
+        if c["user"]["login"] != bot and trusted(c.get("author_association")) and c["created_at"] > since:
             out.append(f"## {c['path']}:{c.get('line') or c.get('original_line')} — {c['user']['login']}\n{c['body']}\n")
     for c in view.get("comments", []):
-        if c["author"]["login"] != bot and c["createdAt"] > since:
+        if c["author"]["login"] != bot and trusted(c.get("authorAssociation")) and c["createdAt"] > since:
             out.append(f"## Comment by {c['author']['login']}\n{c['body']}\n")
     print("\n".join(out) if len(out) > 1 else out[0] + "\n(No new feedback.)")
+
+
+TRUSTED = {"OWNER", "MEMBER", "COLLABORATOR"}
+
+
+def trusted(assoc: str | None) -> bool:
+    """Only maintainers' words become agent requirements. The repo is public: anyone can comment."""
+    return (assoc or "").upper() in TRUSTED
 
 
 def cmd_comments(args) -> None:
@@ -651,7 +660,7 @@ def cmd_comments(args) -> None:
     n = issue_for(args.id, cfg["repo"])["number"]
     view = gh("issue", "view", str(n), "--repo", cfg["repo"], "--json", "comments,author", parse_json=True)
     humans = [c for c in view.get("comments", []) if not c["author"]["login"].endswith("[bot]")
-              and c["author"]["login"] != view["author"]["login"]]
+              and c["author"]["login"] != view["author"]["login"] and trusted(c.get("authorAssociation"))]
     if not humans:
         print("(No maintainer comments.)")
     for c in humans:
