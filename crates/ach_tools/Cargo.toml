@@ -12,4 +12,11 @@ name = "ach"
 path = "src/main.rs"
 
 [dependencies]
+ach_core = { path = "../ach_core" }
+ach_world = { path = "../ach_world" }
+anyhow = "1"
 clap = { version = "4", features = ["derive"] }
+image = { version = "0.25", default-features = false, features = ["png"] }
+ron = "0.12"
+serde = { version = "1", features = ["derive"] }
+tiff = "0.10"
